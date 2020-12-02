@@ -12,6 +12,7 @@ struct Line<'a> {
     pw: &'a str,
 }
 
+// TODO: understand rust lifetimes enough to make this work 🤯
 impl Line<'a> {
     fn is_valid(&self) -> bool {
         false
@@ -25,9 +26,11 @@ fn main() {
     // example input line
     // 3-5 f: fgfff
     let pattern = Regex::new(r"^(\d+)-(\d+) (\w): (\w+)$").unwrap();
-    // note using .nth(0) here because I can't see neither first nor head (but last is available?)
-    // also next() requires a mutable instance (i'm not keen on advancing the inner state of the
-    // iter)
+
+    // really this boils down to a map | filter | count
+    // map being parse the line into concepts
+    // filter being: implement the check that char c has to occure min_count to max_count times in
+    // pw
     let _x:Vec<Line> = lines.map(|l| {
             let caps = pattern.captures(l).unwrap();
             let min_count = caps.get(0).unwrap().as_str().parse::<u32>().unwrap();
