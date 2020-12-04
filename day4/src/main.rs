@@ -1,5 +1,6 @@
 fn count_valid_pass (i: &str) -> usize {
     // TODO: figure out how to parse the str blocks into structs
+    // Note: I miss clojures parition_by which can give more than one parition :(
     // let fields = i.lines().fold(||)
     // println!("fields: {:#?}", fields);
     0
