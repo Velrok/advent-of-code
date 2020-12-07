@@ -15,11 +15,11 @@ impl Seat {
 
 fn find_row(row_spec: &str) -> usize {
     let rows: Vec<usize> = (0..ROW_COUNT).collect();
-    let row_range = row_spec.chars().fold(rows, |range, fb|{
-        let l = range.len();
+    let row_range = row_spec.chars().fold(rows, |acc, fb|{
+        let l = acc.len();
         match fb {
-            'B' => range.into_iter().skip(l / 2).collect(),
-            'F' => range.into_iter().take(l / 2).collect(),
+            'B' => acc.into_iter().skip(l / 2).collect(),
+            'F' => acc.into_iter().take(l / 2).collect(),
             _ => panic!(),
         }
     });
@@ -29,11 +29,11 @@ fn find_row(row_spec: &str) -> usize {
 
 fn find_col(col_spec: &str) -> usize {
     let cols: Vec<usize> = (0..COLUMN_COUNT).collect();
-    let col_range = col_spec.chars().fold(cols, |range, rl|{
-        let l = range.len();
+    let col_range = col_spec.chars().fold(cols, |acc, rl|{
+        let l = acc.len();
         match rl {
-            'R' => range.into_iter().skip(l / 2).collect(),
-            'L' => range.into_iter().take(l / 2).collect(),
+            'R' => acc.into_iter().skip(l / 2).collect(),
+            'L' => acc.into_iter().take(l / 2).collect(),
             _ => panic!(),
         }
     });
