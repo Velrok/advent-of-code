@@ -56,13 +56,32 @@ fn test() {
     assert_eq!(Seat{row: 102, column: 4}, parse_seat_spec("BBFFBBFRLL"));
 }
 
-fn main() {
-    let input = include_str!("../input");
-    let highest_seat_id = input.lines()
+fn part1(i: &str) {
+    let highest_seat_id = i.lines()
         .map(parse_seat_spec)
         .map(|s| s.id())
         .max()
         .unwrap();
     println!("highest_seat_id: {}", highest_seat_id);
+}
+
+fn part2(i: &str) {
+    let mut seats: Vec<_> = i.lines().map(parse_seat_spec).map(|s| s.id()).collect();
+    seats.sort();
+
+    let my_seat_id = seats.iter().zip(seats.iter().skip(1))
+        .fold(0, |acc, (&a_id, &b_id)| {
+            match a_id + 1 == b_id {
+                true => acc,
+                false => a_id + 1,
+            }
+        });
+    println!("my seat id: {}", my_seat_id);
+}
+
+fn main() {
+    let input = include_str!("../input");
+    part1(input);
+    part2(input);
 }
 
