@@ -16,7 +16,6 @@ impl Seat {
 fn find_row(row_spec: &str) -> usize {
     let rows: Vec<usize> = (0..ROW_COUNT).collect();
     let row_range = row_spec.chars().fold(rows, |range, fb|{
-        println!("range: {:#?}, fb: {:#?}", range, fb);
         let l = range.len();
         match fb {
             'B' => range.into_iter().skip(l / 2).collect(),
@@ -31,7 +30,6 @@ fn find_row(row_spec: &str) -> usize {
 fn find_col(col_spec: &str) -> usize {
     let cols: Vec<usize> = (0..COLUMN_COUNT).collect();
     let col_range = col_spec.chars().fold(cols, |range, rl|{
-        println!("range: {:#?}, rl: {:#?}", range, rl);
         let l = range.len();
         match rl {
             'R' => range.into_iter().skip(l / 2).collect(),
@@ -60,12 +58,11 @@ fn test() {
 
 fn main() {
     let input = include_str!("../input");
-    let zero: usize = 0;
-    input.lines()
+    let highest_seat_id = input.lines()
         .map(parse_seat_spec)
-        .fold(zero, |biggest: usize, seat:Seat| match seat.id() > biggest {
-            true  => seat.id(),
-            false => biggest,
-        })
+        .map(|s| s.id())
+        .max()
+        .unwrap();
+    println!("highest_seat_id: {}", highest_seat_id);
 }
 
