@@ -80,8 +80,9 @@ fn part2(i: &str) {
 }
 
 fn main() {
+    // TODO: implement FromStr trait
+    // let my_seat:Seat = "BBFFBBFRLL".parse::<Seat>();
     let input = include_str!("../input");
     part1(input);
     part2(input);
 }
-
