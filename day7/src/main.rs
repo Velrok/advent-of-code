@@ -1,19 +1,21 @@
 use std::str::FromStr;
 use std::string::ParseError;
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 struct Bag {
     color: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 struct BagRule {
     container: Bag,
     contents: Vec<Bag>,
 }
 
 fn trim_bags(s: &str) -> String {
-    s.trim().replace(" bags", "")
+    s.trim()
+        .replace(" bags", "")
+        .replace(" bag", "")
 }
 
 impl FromStr for BagRule {
@@ -26,7 +28,6 @@ impl FromStr for BagRule {
         let container: String = trim_bags(parts.next().unwrap());
         // next we have a , separated string of bags. Drop the . at the end
         let contents: String = parts.next().unwrap().replace(".","");
-        let no_other = "no other bags".to_string();
         let contents: Vec<Bag> = if contents == "no other bags" {
             Vec::new()
         } else {
@@ -43,6 +44,25 @@ impl FromStr for BagRule {
     }
 }
 
+// 'a is to explain to the compiler that rules_found are borrowed form rule_set
+fn applicable_rules<'a>(rule_set: &'a Vec<BagRule>, color_backlog: Vec<&str>, rules_found: Vec<&'a BagRule>) -> Vec<&'a BagRule> {
+    // TODO got too many rules! return 6 shoudl be 4
+    println!("b: {:#?}, rules: {:#?}", color_backlog, rules_found);
+    if color_backlog.is_empty() {
+        return rules_found;
+    }
+
+    let x: Vec<_> = rule_set.iter()
+        .filter(|r| r.contents.contains(&Bag{color: color_backlog[0].to_string()}))
+        .collect();
+
+    applicable_rules(
+        rule_set,
+        color_backlog[1..].iter().cloned().chain(x.iter().map(|r| r.container.color.as_str())).collect(),
+        rules_found.iter().cloned().chain(x.iter().cloned()).collect()
+    )
+}
+
 fn testing() {
     let input = "light red bags contain 1 bright white bag, 2 muted yellow bags.
 dark orange bags contain 3 bright white bags, 4 muted yellow bags.
@@ -53,16 +73,16 @@ dark olive bags contain 3 faded blue bags, 4 dotted black bags.
 vibrant plum bags contain 5 faded blue bags, 6 dotted black bags.
 faded blue bags contain no other bags.
 dotted black bags contain no other bags.";
-    let rules = input.lines()
-        .map(|l| {
-            l.parse::<BagRule>()
-        });
 
-    let bag_str = "dark orange bags contain 3 bright white bags, 4 muted yellow bags.";
     let rules: Vec<_> = input.lines()
-        .map(|l| l.parse::<BagRule>())
+        .map(|l| l.parse::<BagRule>().unwrap())
         .collect();
-    println!("Bag: {:#?}", rules);
+    // println!("Bag: {:#?}", rules);
+    println!("applicable_rules : {:#?}", applicable_rules(
+            &rules,
+            vec!["shiny gold"],
+            Vec::new()
+            ).len());
 }
 
 fn main() {
