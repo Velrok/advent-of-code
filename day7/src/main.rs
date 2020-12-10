@@ -2,7 +2,7 @@ use std::str::FromStr;
 use std::string::ParseError;
 use std::fmt;
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, PartialOrd, Ord)]
 struct Bag {
     color: String,
 }
@@ -17,7 +17,7 @@ impl fmt::Display for Bag {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq, PartialOrd, Ord)]
 struct BagRule {
     container: Bag,
     contents: Vec<Bag>,
@@ -80,15 +80,14 @@ fn bag_rule_from_str() {
 fn bag_display() {
     assert_eq!(
         format!("{}", Bag{color: "light red".to_string()}),
-        ">light red<🛄"
+        " <light red 🛄>"
     );
 }
 
 
 // 'a is to explain to the compiler that rules_found are borrowed form rule_set
 fn applicable_rules<'a>(rule_set: &'a Vec<BagRule>, color_backlog: Vec<&str>, rules_found: Vec<&'a BagRule>) -> Vec<&'a BagRule> {
-    // TODO got too many rules! return 6 shoudl be 4
-    println!("b: {:#?}, rules: {:#?}", color_backlog, rules_found);
+    // println!("b: {:#?}, rules: {:#?}", color_backlog, rules_found);
     if color_backlog.is_empty() {
         return rules_found;
     }
@@ -97,13 +96,19 @@ fn applicable_rules<'a>(rule_set: &'a Vec<BagRule>, color_backlog: Vec<&str>, ru
         .filter(|r| r.contents.contains(&Bag{color: color_backlog[0].to_string()}))
         .collect();
 
+    let mut r_found_next = rules_found.iter().cloned().chain(x.iter().cloned()).collect::<Vec<&'a BagRule>>();
+    r_found_next.sort();
+    r_found_next.dedup();
+
     applicable_rules(
         rule_set,
         color_backlog[1..].iter().cloned().chain(x.iter().map(|r| r.container.color.as_str())).collect(),
-        rules_found.iter().cloned().chain(x.iter().cloned()).collect()
+        r_found_next
     )
 }
 
+
+#[test]
 fn testing() {
     let input = "light red bags contain 1 bright white bag, 2 muted yellow bags.
 dark orange bags contain 3 bright white bags, 4 muted yellow bags.
@@ -124,12 +129,32 @@ dotted black bags contain no other bags.";
         vec!["shiny gold"],
         Vec::new());
     println!("applicable_rules");
-    for r in applicable {
+    for r in &applicable {
         println!("{}", r);
     }
+    assert_eq!(4, applicable.len());
+}
+
+fn part1(input: &str) {
+    let rules: Vec<_> = input.lines()
+        .map(|l| l.parse::<BagRule>().unwrap())
+        .collect();
+
+    let applicable = applicable_rules(
+        &rules,
+        vec!["shiny gold"],
+        Vec::new());
+
+    println!("part 1");
+    for r in &applicable {
+        println!("{}", r);
+    }
+    println!("applicable rules -> {}", applicable.len());
 }
 
 fn main() {
     println!("Day 7");
-    testing();
+    let input = include_str!("../input");
+    // testing();
+    part1(input);
 }
