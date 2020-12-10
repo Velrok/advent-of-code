@@ -44,6 +44,17 @@ impl FromStr for BagRule {
     }
 }
 
+#[test]
+fn bag_rule_from_str() {
+    let r = "light red bags contain 1 bright white bag, 2 muted yellow bags.".parse::<BagRule>().unwrap();
+    assert_eq!(BagRule{
+        container: Bag{color: "light red".to_string()},
+        contents: vec![
+            Bag{color: "bright white".to_string()},
+            Bag{color: "muted yellow".to_string()}
+        ]}, r);
+}
+
 // 'a is to explain to the compiler that rules_found are borrowed form rule_set
 fn applicable_rules<'a>(rule_set: &'a Vec<BagRule>, color_backlog: Vec<&str>, rules_found: Vec<&'a BagRule>) -> Vec<&'a BagRule> {
     // TODO got too many rules! return 6 shoudl be 4
