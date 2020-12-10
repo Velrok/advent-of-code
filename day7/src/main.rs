@@ -1,9 +1,20 @@
 use std::str::FromStr;
 use std::string::ParseError;
+use std::fmt;
 
 #[derive(Debug, Eq, PartialEq)]
 struct Bag {
     color: String,
+}
+
+impl fmt::Display for Bag {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // Write strictly the first element into the supplied output
+        // stream: `f`. Returns `fmt::Result` which indicates whether the
+        // operation succeeded or failed. Note that `write!` uses syntax which
+        // is very similar to `println!`.
+        write!(f, " <{} 🛄>", self.color)
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -16,6 +27,16 @@ fn trim_bags(s: &str) -> String {
     s.trim()
         .replace(" bags", "")
         .replace(" bag", "")
+}
+
+impl fmt::Display for BagRule {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // Write strictly the first element into the supplied output
+        // stream: `f`. Returns `fmt::Result` which indicates whether the
+        // operation succeeded or failed. Note that `write!` uses syntax which
+        // is very similar to `println!`.
+        write!(f, "{} -> {:?}", self.container, self.contents.iter().map(|b| format!("{}", b)).collect::<String>())
+    }
 }
 
 impl FromStr for BagRule {
@@ -55,6 +76,15 @@ fn bag_rule_from_str() {
         ]}, r);
 }
 
+#[test]
+fn bag_display() {
+    assert_eq!(
+        format!("{}", Bag{color: "light red".to_string()}),
+        ">light red<🛄"
+    );
+}
+
+
 // 'a is to explain to the compiler that rules_found are borrowed form rule_set
 fn applicable_rules<'a>(rule_set: &'a Vec<BagRule>, color_backlog: Vec<&str>, rules_found: Vec<&'a BagRule>) -> Vec<&'a BagRule> {
     // TODO got too many rules! return 6 shoudl be 4
@@ -89,11 +119,14 @@ dotted black bags contain no other bags.";
         .map(|l| l.parse::<BagRule>().unwrap())
         .collect();
     // println!("Bag: {:#?}", rules);
-    println!("applicable_rules : {:#?}", applicable_rules(
-            &rules,
-            vec!["shiny gold"],
-            Vec::new()
-            ).len());
+    let applicable = applicable_rules(
+        &rules,
+        vec!["shiny gold"],
+        Vec::new());
+    println!("applicable_rules");
+    for r in applicable {
+        println!("{}", r);
+    }
 }
 
 fn main() {
