@@ -1,3 +1,4 @@
+#![feature(split_inclusive)]
 use std::str::FromStr;
 use std::string::ParseError;
 use std::fmt;
@@ -5,6 +6,7 @@ use std::fmt;
 #[derive(Debug, Eq, PartialEq, PartialOrd, Ord)]
 struct Bag {
     color: String,
+    quantity: usize,
 }
 
 impl fmt::Display for Bag {
@@ -13,7 +15,7 @@ impl fmt::Display for Bag {
         // stream: `f`. Returns `fmt::Result` which indicates whether the
         // operation succeeded or failed. Note that `write!` uses syntax which
         // is very similar to `println!`.
-        write!(f, " <{} 🛄>", self.color)
+        write!(f, " <{} {} 🛄>", self.quantity, self.color)
     }
 }
 
@@ -53,13 +55,21 @@ impl FromStr for BagRule {
             Vec::new()
         } else {
             contents.split(", ")
-                .map(|s| trim_bags(s.split(char::is_numeric).nth(1).unwrap().trim())) // ditch the leading numnbers
-                .map(|c| Bag{color: c}) // make Bags
+                .map(|s| {
+                    let mut split = s.split_inclusive(char::is_numeric);
+                    let number = split.next().unwrap();
+                    let color = split.next().unwrap();
+                    println!("No: '{}'", number);
+                    Bag{
+                        color: trim_bags(color.trim()),
+                        quantity: number.parse::<usize>().unwrap_or(0)
+                    }
+                }) // ditch the leading numnbers
                 .collect()
         };
 
         Ok(BagRule{
-            container: Bag{color: container},
+            container: Bag{color: container, quantity: 1},
             contents: contents,
         })
     }
@@ -69,18 +79,18 @@ impl FromStr for BagRule {
 fn bag_rule_from_str() {
     let r = "light red bags contain 1 bright white bag, 2 muted yellow bags.".parse::<BagRule>().unwrap();
     assert_eq!(BagRule{
-        container: Bag{color: "light red".to_string()},
+        container: Bag{color: "light red".to_string(), quantity: 1},
         contents: vec![
-            Bag{color: "bright white".to_string()},
-            Bag{color: "muted yellow".to_string()}
+            Bag{color: "bright white".to_string(), quantity: 1},
+            Bag{color: "muted yellow".to_string(), quantity: 2}
         ]}, r);
 }
 
 #[test]
 fn bag_display() {
     assert_eq!(
-        format!("{}", Bag{color: "light red".to_string()}),
-        " <light red 🛄>"
+        format!("{}", Bag{color: "light red".to_string(), quantity: 5}),
+        " <5 light red 🛄>"
     );
 }
 
@@ -93,7 +103,11 @@ fn applicable_rules<'a>(rule_set: &'a Vec<BagRule>, color_backlog: Vec<&str>, ru
     }
 
     let x: Vec<_> = rule_set.iter()
-        .filter(|r| r.contents.contains(&Bag{color: color_backlog[0].to_string()}))
+        .filter(|r| {
+            r.contents.iter()
+                .filter(|b| b.color == color_backlog[0].to_string())
+                .count() > 0
+        })
         .collect();
 
     let mut r_found_next = rules_found.iter().cloned().chain(x.iter().cloned()).collect::<Vec<&'a BagRule>>();
