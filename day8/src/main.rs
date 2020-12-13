@@ -2,7 +2,7 @@ use std::error::Error;
 use std::fmt;
 use std::str::FromStr;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 enum Instruction {
     Acc(i32),
     Jmp(i32),
@@ -101,6 +101,17 @@ impl<'a> Execution<'_> {
             Instruction::Jmp(j) => self.next_instruction_idx = add(self.next_instruction_idx, *j),
         }
     }
+
+    fn run(&mut self) -> ExecutionResult {
+        loop {
+            let r = self.next();
+            match r {
+                ExecutionResult::EndlessLoop(_) => return r,
+                ExecutionResult::Terminated(_) => return r,
+                ExecutionResult::Running(_) => (),
+            }
+        }
+    }
 }
 
 #[test]
@@ -126,12 +137,7 @@ acc +6";
     println!("Program: {:#?}", program);
 
     let mut exe = Execution::new(&program);
-    let mut i = 0;
-
-    while let ExecutionResult::Running(s) = exe.next() {
-        println!("i: {} -> {:#?}", i, s);
-        i += 1;
-    }
+    println!("-> {:#?}", exe.run());
 }
 
 #[test]
@@ -165,13 +171,45 @@ fn part1(program: &Program) {
 fn main() {
     // testing();
     let input = include_str!("../input");
+    let instructions: Vec<_> = input
+        .lines()
+        .map(|l| l.parse::<Instruction>().unwrap())
+        .collect();
 
     let program = Program {
-        instructions: input
-            .lines()
-            .map(|l| l.parse::<Instruction>().unwrap())
-            .collect(),
+        instructions: instructions.clone(),
     };
 
-    part1(&program);
+    let jumps: Vec<_> = instructions
+        .iter()
+        .enumerate()
+        .filter(|(_idx, i)| match i {
+            Instruction::Jmp(_) => true,
+            _ => false,
+        })
+        .map(|(idx, _i)| idx)
+        .collect();
+
+    // flip one jump at a time
+    println!("looking for valid program by replacing jumps with noops");
+    for idx in jumps {
+        // println!("Replacing Jmp with Nop in line {}", idx);
+        let mut mod_instructions = instructions.clone();
+        if let Some(i) = mod_instructions.get_mut(idx) {
+            *i = Instruction::Nop;
+        }
+        let program = Program {
+            instructions: mod_instructions,
+        };
+        let mut exe = Execution::new(&program);
+        match exe.run() {
+            ExecutionResult::Terminated(acc) => {
+                println!("Finished with {}! ", acc);
+                break;
+            }
+            _ => print!("."),
+        }
+    }
+
+    // part1(&program);
 }
