@@ -42,7 +42,7 @@ impl FromStr for Instruction {
 }
 
 struct Execution<'a> {
-    state: i32,
+    accumulator: i32,
     next_instruction_idx: usize,
     programm: &'a Program,
     log: Vec<usize>,
@@ -66,7 +66,7 @@ fn add(u: usize, i: i32) -> usize {
 impl<'a> Execution<'_> {
     fn new(p: &'a Program) -> Execution<'a> {
         Execution {
-            state: 0,
+            accumulator: 0,
             next_instruction_idx: 0,
             programm: p,
             log: Vec::new(),
@@ -75,10 +75,10 @@ impl<'a> Execution<'_> {
 
     fn next(&mut self) -> ExecutionResult {
         match self.log.contains(&self.next_instruction_idx) {
-            true => ExecutionResult::Terminated(self.state),
+            true => ExecutionResult::Terminated(self.accumulator),
             false => {
                 self.step();
-                ExecutionResult::Running(self.state)
+                ExecutionResult::Running(self.accumulator)
             }
         }
     }
@@ -86,22 +86,19 @@ impl<'a> Execution<'_> {
     fn step(&mut self) {
         assert!(!self.log.contains(&self.next_instruction_idx));
         let inst = &self.programm.instructions[self.next_instruction_idx];
+        self.log.push(self.next_instruction_idx);
         match inst {
             Instruction::Nop => self.next_instruction_idx += 1,
             Instruction::Acc(c) => {
-                self.state += c;
-                self.log.push(self.next_instruction_idx);
+                self.accumulator += c;
                 self.next_instruction_idx += 1
             }
-            Instruction::Jmp(j) => {
-                self.log.push(self.next_instruction_idx);
-                self.next_instruction_idx = add(self.next_instruction_idx, *j)
-            }
+            Instruction::Jmp(j) => self.next_instruction_idx = add(self.next_instruction_idx, *j),
         }
     }
 }
 
-// #[test]
+#[test]
 fn testing() {
     println!(">>>>>>>");
     let input = "nop +0
