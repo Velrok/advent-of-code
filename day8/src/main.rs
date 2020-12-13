@@ -48,9 +48,10 @@ struct Execution<'a> {
     log: Vec<usize>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum ExecutionResult {
     Running(i32),
+    EndlessLoop(i32),
     Terminated(i32),
 }
 
@@ -75,10 +76,14 @@ impl<'a> Execution<'_> {
 
     fn next(&mut self) -> ExecutionResult {
         match self.log.contains(&self.next_instruction_idx) {
-            true => ExecutionResult::Terminated(self.accumulator),
+            true => ExecutionResult::EndlessLoop(self.accumulator),
             false => {
                 self.step();
-                ExecutionResult::Running(self.accumulator)
+                if &self.next_instruction_idx >= &self.programm.instructions.len() {
+                    ExecutionResult::Terminated(self.accumulator)
+                } else {
+                    ExecutionResult::Running(self.accumulator)
+                }
             }
         }
     }
@@ -127,6 +132,22 @@ acc +6";
         println!("i: {} -> {:#?}", i, s);
         i += 1;
     }
+}
+
+#[test]
+fn test_minimal_term() {
+    let input = "nop +0
+acc +10";
+    let program = Program {
+        instructions: input
+            .lines()
+            .map(|l| l.parse::<Instruction>().unwrap())
+            .collect(),
+    };
+
+    let mut exe = Execution::new(&program);
+    assert_eq!(ExecutionResult::Running(0), exe.next());
+    assert_eq!(ExecutionResult::Terminated(10), exe.next());
 }
 
 fn part1(program: &Program) {
