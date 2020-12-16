@@ -106,6 +106,8 @@ fn to_1d(p: &Point2D, field_width: usize) -> Option<Point1D> {
         return None;
     }
 
+    // TODO need to check for height as well
+
     Some(Point1D {
         field_width,
         idx: (p.y * (field_width as i32) + p.x) as usize,
