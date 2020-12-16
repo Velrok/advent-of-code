@@ -9,6 +9,17 @@ enum Position {
     Empty,
 }
 
+impl fmt::Display for Position {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let out = match self {
+            Position::Floor => ".",
+            Position::Occupied => "#",
+            Position::Empty => "L",
+        };
+        write!(f, "{}", out)
+    }
+}
+
 #[derive(PartialEq, Eq, Debug)]
 struct SeatLayout {
     positions: Vec<Position>,
@@ -44,6 +55,19 @@ impl FromStr for SeatLayout {
     }
 }
 
+impl fmt::Display for SeatLayout {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut out = String::from("\n");
+        for c in self.positions[..].chunks(self.width) {
+            for p in c {
+                out.push_str(format!("{}", p).as_str());
+            }
+            out.push_str("\n");
+        }
+        write!(f, "{}", out)
+    }
+}
+
 fn no_of_adjacent_occupied_positions(sl: &SeatLayout, idx: usize) -> usize {
     42
 }
@@ -76,5 +100,5 @@ LLLLLLLLLL
 L.LLLLLL.L
 L.LLLLL.LL";
 
-    println!("SeatLayout: {:?}", input.parse::<SeatLayout>());
+    println!("SeatLayout: --{}--", input.parse::<SeatLayout>().unwrap());
 }
