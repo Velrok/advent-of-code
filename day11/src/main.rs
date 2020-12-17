@@ -26,6 +26,15 @@ struct SeatLayout {
     width: usize,
 }
 
+impl SeatLayout {
+    fn occupied_count(&self) -> usize {
+        self.positions
+            .iter()
+            .filter(|&p| *p == Position::Occupied)
+            .count()
+    }
+}
+
 #[derive(Debug)]
 struct SeatLayoutParseError;
 impl Error for SeatLayoutParseError {}
@@ -198,6 +207,20 @@ fn next_state(sl: &SeatLayout) -> SeatLayout {
     }
 }
 
+fn part1(input: &str) {
+    let seat_layout = input.parse::<SeatLayout>().unwrap();
+    let mut reference = seat_layout;
+
+    loop {
+        let next = next_state(&reference);
+        if reference == next {
+            println!("Occupied seats: {}", next.occupied_count());
+            break;
+        }
+        reference = next;
+    }
+}
+
 fn main() {
     // parse map
     // get_adjacent
@@ -207,6 +230,8 @@ fn main() {
     // If a seat is empty (L) and there are no occupied seats adjacent to it, the seat becomes occupied.
     // If a seat is occupied (#) and four or more seats adjacent to it are also occupied, the seat becomes empty.
     // Otherwise, the seat's state does not change.
+    let input = include_str!("../input");
+    part1(input);
 }
 
 #[test]
@@ -222,7 +247,7 @@ LLLLLLLLLL
 L.LLLLLL.L
 L.LLLLL.LL";
 
-    let step_1 = "#.##.##.##
+    let round1 = "#.##.##.##
 #######.##
 #.#.#..#..
 ####.##.##
@@ -235,10 +260,31 @@ L.LLLLL.LL";
         .parse::<SeatLayout>()
         .unwrap();
 
+    let round2 = "#.LL.L#.##
+#LLLLLL.L#
+L.L.L..L..
+#LLL.LL.L#
+#.LL.LL.LL
+#.LLLL#.##
+..L.L.....
+#LLLLLLLL#
+#.LLLLLL.L
+#.#LLLL.##"
+        .parse::<SeatLayout>()
+        .unwrap();
+
     let layout = input.parse::<SeatLayout>().unwrap();
 
+    assert_eq!(0, layout.occupied_count());
+    assert_eq!(20, round2.occupied_count());
+
     println!("SeatLayout: --{}--", layout);
+
     let layout_1 = next_state(&layout);
-    println!("SeatLayout Step 1: --{}--", layout_1);
-    assert_eq!(step_1, layout_1);
+    println!("SeatLayout round 1: --{}--", layout_1);
+    assert_eq!(round1, layout_1);
+
+    let layout_2 = next_state(&layout_1);
+    println!("SeatLayout round 2: --{}--", layout_2);
+    assert_eq!(round2, layout_2);
 }
