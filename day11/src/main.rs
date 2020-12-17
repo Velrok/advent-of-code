@@ -98,19 +98,20 @@ fn to_2d(p: &Point1D) -> Point2D {
     }
 }
 
-fn to_1d(p: &Point2D, field_width: usize) -> Option<Point1D> {
+fn to_1d(p: &Point2D, sl: &SeatLayout) -> Option<Point1D> {
     if p.x < 0 || p.y < 0 {
         return None;
     }
-    if p.x >= field_width as i32 {
+
+    let h = sl.positions.len() / sl.width;
+
+    if p.x >= sl.width as i32 || p.y >= h as i32 {
         return None;
     }
 
-    // TODO need to check for height as well
-
     Some(Point1D {
-        field_width,
-        idx: (p.y * (field_width as i32) + p.x) as usize,
+        field_width: sl.width,
+        idx: (p.y * (sl.width as i32) + p.x) as usize,
     })
 }
 
@@ -138,7 +139,7 @@ fn no_of_adjacent_occupied_positions(sl: &SeatLayout, idx: usize) -> usize {
 
     neightbours
         .iter()
-        .map(|p| to_1d(p, sl.width))
+        .map(|p| to_1d(p, sl))
         .filter(|o| match o {
             None => false,
             _ => true,
@@ -168,6 +169,7 @@ fn neightbours_test() {
 fn next_state(sl: &SeatLayout) -> SeatLayout {
     let mut positions: Vec<Position> = Vec::new();
     let mut i = 0;
+
     for p in &sl.positions {
         let occupied_count = no_of_adjacent_occupied_positions(sl, i);
         let new_p = match p {
