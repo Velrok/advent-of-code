@@ -17,14 +17,12 @@ fn parse_input(i: &str) -> (i32, Vec<i32>) {
 
 fn part1(i: &str) -> i32 {
     let (ts, bus_lines) = parse_input(i);
-    // println!("ts: {}, busses: {:?}", ts, bus_lines);
-    //bus_lines.map(|bl| (bl, quick_bus_times(ts, bl)));
     let mut next_bus_in = 99999999;
     let mut result = -1;
 
     for bl in bus_lines {
         let wait_time = quick_bus_times(ts, bl);
-        if (wait_time < next_bus_in) {
+        if wait_time < next_bus_in {
             println!("Next bus is a {}, in {}.", bl, wait_time);
             next_bus_in = wait_time;
             result = bl * wait_time;
@@ -39,7 +37,6 @@ fn quick_bus_times(ts: i32, bus_every: i32) -> i32 {
 
 #[test]
 fn quick_bus_times_test() {
-    let bl = 7;
     assert_eq!(4, quick_bus_times(10, 7))
 }
 
