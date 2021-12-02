@@ -1,6 +1,9 @@
-(ns advent.core)
+(ns advent.core
+  (:require [clojure.java.io :as io]))
 
-(defn foo
-  "I don't do a whole lot."
-  [x]
-  (println x "Hello, World!"))
+(defn read-ints
+  [filename]
+  (some->> filename
+           io/reader
+           line-seq
+           (map #(Integer/parseInt %))))
