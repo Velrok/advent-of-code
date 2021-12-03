@@ -12,3 +12,15 @@
   (some->> filename
            read-strings
            (map #(Integer/parseInt %))))
+
+(defn read-bit-matrix
+  [filename]
+  (some->> filename
+           read-strings
+           (mapv (fn [line] (->> line (mapv #(Integer/parseInt (str %))))))))
+
+(def row nth)
+
+(defn col
+  [matrix index]
+  (map #(nth % index) matrix))
