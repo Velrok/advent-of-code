@@ -1,7 +1,7 @@
 (ns advent.day-4
   (:require
    [clojure.set :refer [subset? difference]]
-   [advent.core :refer [read-strings read-bit-matrix rows cols col parse-int]]
+   [advent.core :refer [read-strings rows cols parse-int]]
    [clojure.string :as string]))
 
 (defn draw-seq
@@ -41,7 +41,6 @@
              nil?
              not)))
 
-;; TODO filter out wnners from the pool of players
 (defn winning-boards
   [{:keys [numbers boards]}]
   (loop [draws (draw-seq numbers)
