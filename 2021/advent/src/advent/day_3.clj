@@ -1,6 +1,5 @@
 (ns advent.day-3
-  (:require [advent.core :refer [read-strings read-bit-matrix row col]]
-            [clojure.string :as string]))
+  (:require [advent.core :refer [read-strings read-bit-matrix col]]))
 
 (defn most-common-bits
   [matrix]
