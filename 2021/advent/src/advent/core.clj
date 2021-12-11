@@ -24,3 +24,18 @@
 (defn col
   [matrix index]
   (map #(nth % index) matrix))
+
+(defn parse-int
+  [s]
+  (Integer/parseInt s))
+
+(defn rows
+  [matrix]
+  matrix)
+
+(defn cols
+[m]
+(let [col-count (->> m first count)]
+  (for [i (range col-count)]
+    (col m i)))
+)
