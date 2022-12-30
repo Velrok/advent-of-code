@@ -1,9 +1,8 @@
 (local utils (require :utils))
 
+;; (let [(s r) (pcall tonumber "12")]
+;;   (utils.prettyprint s))
+;; (utils.prettyprint (utils.read-numbers "day1.test.input"))
 
-
-
-
-(utils.prettyprint (utils.partition-by (fn [x] (< x 3))
-                                        [1 2 3 4 5 6]))
-;; (print (utils.hello))
+(utils.prettyprint
+  (utils.table-split (utils.read-numbers "day1.test.input") :nan))
