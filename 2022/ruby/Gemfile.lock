@@ -56,6 +56,7 @@ PLATFORMS
 
 DEPENDENCIES
   sorbet (~> 0.5.10932)
+  sorbet-runtime (~> 0.5.10932)
   tapioca (~> 0.11.8)
 
 BUNDLED WITH
