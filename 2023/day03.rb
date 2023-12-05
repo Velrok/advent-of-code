@@ -64,6 +64,11 @@ class Schematic < T::Struct
     !(/\d/.match(self[position]).nil?)
   end
 
+  sig { params(position: Position).returns(T::Boolean) }
+  def gear?(position)
+    self[position] == '*'
+  end
+
 
   sig { params(position: Position).returns(T::Boolean) }
   def includes?(position)
@@ -105,9 +110,12 @@ class Schematic < T::Struct
   end
 end
 
+puts ">>============="
+
 input = File
   .readlines('./day03.input', chomp: true)
   .map { |line| line.split('') }
+
 
 schematic = Schematic.new(data: input)
 
@@ -126,4 +134,29 @@ def part1(schematic)
     .sum
 end
 
-p part1(schematic)
+sig { params(schematic: Schematic).returns(T.untyped) }
+def part2(schematic)
+  pattern = /[\d\.]/
+  schematic
+    .positions
+    .select { |position| schematic[position] == "*" } # all *
+    .map do |position|
+      schematic
+        .neighbours(position)
+        .select { schematic.digit?(_1) }
+        .map { schematic.digits(_1) }
+        .uniq
+        .map do |positions|
+          positions
+            .map {|position| schematic[position] }
+            .join
+            .to_i
+        end
+    end
+    .select do |positions| positions.length == 2 end
+    .map do |gear_ratios| gear_ratios.first * gear_ratios.last end
+    .sum
+end
+
+p part2(schematic)
+puts "<<============="
