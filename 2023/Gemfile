@@ -2,6 +2,6 @@
 
 source "https://rubygems.org"
 
-# gem "rails"
-
-gem "sorbet", "~> 0.5.11144"
+gem 'sorbet-static-and-runtime'
+gem 'tapioca', require: false, :group => :development
+gem 'sorbet-struct-comparable'
