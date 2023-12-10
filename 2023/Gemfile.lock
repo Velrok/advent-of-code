@@ -41,6 +41,8 @@ GEM
       yard (>= 0.9)
 
 PLATFORMS
+  arm64-darwin-20
+  arm64-darwin-22
   arm64-darwin-23
 
 DEPENDENCIES
@@ -49,4 +51,4 @@ DEPENDENCIES
   tapioca
 
 BUNDLED WITH
-   2.4.20
+   2.3.21
