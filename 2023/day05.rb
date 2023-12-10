@@ -13,16 +13,31 @@ module Day05
     class Range < T::Struct
       extend T::Sig
 
-      const :source, T::Range[Numeric]
-      const :destination, T::Range[Numeric]
-    end
+      const :dest, Numeric
+      const :source, Numeric
+      const :length, Numeric
 
+      sig { params(i: Numeric).returns(T::Boolean) }
+      def include?(i)
+        i >= source && i <= source + length
+      end
+
+      sig { params(i: Numeric).returns(Numeric) }
+      def lookup(i)
+        raise "Invalid source" unless self.include?(source)
+        gap = dest - source
+        i + gap
+      end
+    end
     const :from, String
     const :to, String
-    const :ranges, T::Array[Map::Range]
+    const :ranges, T::Enumerable[Map::Range]
 
+    sig { params(source: Numeric).returns(Numeric) }
     def lookup(source)
-      T.must(ranges.find { |r| r.source.include?(source) }).destination.begin + (source - T.must(ranges.find { |r| r.source.include?(source) }).source.begin)
+      ranges
+        .find { _1.include?(source) }
+        &.lookup(source) || source
     end
   end
 
@@ -42,17 +57,20 @@ module Day05
         .each_with_index
         .select { |line, index| line.include?("map:") }
         .map do |line, index|
+          index = T.cast(index, Integer)
           m = /(?<from>\w+)-to-(?<to>\w+) map:/.match(line)
-          m => {from:, to:}
 
           ranges = T.must(lines[index+1..]).lazy
             .take_while { _1 != "" }
             .map do |line|
               dest, source, length = T.cast(line.split(" ").map(&:to_i), [Numeric, Numeric, Numeric])
-              Map::Range.new(source: source..(source + length), destination: dest..(dest + length))
+              Map::Range.new(dest:, source:, length:)
             end.to_a
-          pp [line, index, from , to, ranges]
-          Map.new(from:, to:, ranges:)
+          Map.new(
+            from: T.must(T.must(m)[:from]),
+            to: T.must(T.must(m)[:to]),
+            ranges:
+          )
         end
         .to_a
 
@@ -64,10 +82,13 @@ module Day05
       next_category = 'seed'
       next_id = seed
       while next_category != target_category
-       mapper = T.must(mappers.find { |m| m.from == next_category})
+        mapper = T.must(mappers.find { |m| m.from == next_category})
         next_category = mapper.to
+        last_id = next_id
         next_id = mapper.lookup(next_id)
+        # puts "#{mapper.from} -> #{mapper.to}  #{last_id} -> #{next_id}"
       end
+      next_id
     end
   end
 
@@ -78,10 +99,14 @@ end
 
 
 lines = File
-  .readlines('./day05.example', chomp: true)
+  .readlines('./day05.input', chomp: true)
 
 almanc = Day05::Almanac.from_strings(lines)
 
 puts "--> #{__FILE__}"
+# puts "part1: #{almanc.mappers.first.serialize}"
 pp almanc
+  .seeds
+  .map { almanc.lookup_seed_location(_1) }
+  .min
 puts "done"
