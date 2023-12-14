@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 # typed: true
 
+require 'benchmark'
+require 'flamegraph'
+require 'stackprof'
+require 'parallel'
+require 'byebug'
 require 'sorbet-runtime'
 require 'sorbet-struct-comparable'
 
@@ -19,7 +24,7 @@ module Day05
 
       sig { params(i: Numeric).returns(T::Boolean) }
       def include?(i)
-        i >= source && i <= source + length
+        @include ||= i >= source && i <= source + length
       end
 
       sig { params(i: Numeric).returns(Numeric) }
@@ -90,6 +95,22 @@ module Day05
       end
       next_id
     end
+
+    sig { returns(T::Array[Numeric]) }
+    def seeds_1
+      self.seeds
+    end
+
+    sig { returns(T::Enumerable[Numeric]) }
+    def seeds_2
+      seeds
+        .each_slice(2)
+        .lazy
+        .flat_map do |start, length|
+          puts "start: #{start} length: #{length}"
+          (start..(T.must(start) + T.must(length))).step.lazy
+        end
+    end
   end
 
   sig { params(almanac: Almanac).void }
@@ -104,9 +125,18 @@ lines = File
 almanc = Day05::Almanac.from_strings(lines)
 
 puts "--> #{__FILE__}"
+puts (3583832 + 114894281 + 333451605 + 217361990 + 12785610 + 292968049 + 516150861 + 152867148 + 59690410 + 176128197) / 100.0
+
 # puts "part1: #{almanc.mappers.first.serialize}"
-pp almanc
-  .seeds
-  .map { almanc.lookup_seed_location(_1) }
+
+seeds = almanc.seeds_2.to_a
+pp Parallel.map(seeds) do |seed|
+  almanc.lookup_seed_location(seed)
+end
   .min
+# pp Parallel.map(seeds) do |seed|
+#     # almanc.lookup_seed_location(seed)
+#   puts seed
+#   end
+#   # .min
 puts "done"
