@@ -41,6 +41,7 @@ end
 
 class Pipe < T::Struct
   extend T::Sig
+  include T::Struct::ActsAsComparable
 
   const :pos, Pos
   const :model, PipeModel
@@ -122,21 +123,65 @@ def field_from_lines(lines)
   )
 end
 
-sig { params(field: Field).returns(T::Array[Pipe]) }
+sig { params(field: Field).returns([Pipe, Pipe]) }
 def start_connections(field)
   pipe = field.start
-  pipe
+  a, b = pipe
     .connections
     .map { |pos| field.pipe_at(pos) }
     .select { |neighbour_pipe| neighbour_pipe.connections.include?(pipe.pos) }
+  [T.must(a), T.must(b)]
+end
+
+sig { params(from: Pipe, way: Pipe, field: Field).returns(Pipe) }
+def follow(from, way, field)
+  field.pipe_at(
+    T.must(
+      way.connections
+         .reject{ |pos| pos == from.pos }
+         .first
+    )
+  )
 end
 
 sig { params(lines: T::Array[String]).void }
 def d10p1(lines)
   field = field_from_lines(lines)
-  pp start_connections(field)
+
+  this_from = field.start
+  that_from = field.start
+  this_way, that_way = start_connections(field)
+
+  steps = 0
+
+  loop do
+    steps += 1
+
+    pp '-----'
+
+    this_from = this_way
+    that_from = that_way
+
+    this_way = follow(this_from, this_way, field)
+    that_way = follow(that_from, that_way, field)
+
+    pp 'this>', this_from, this_way
+    pp 'that>', that_from, that_way
+
+
+    if this_way.pos == that_way.pos
+      steps += 1
+      break
+    end
+
+    if this_way.pos == that_from.pos || that_way.pos == this_from.pos
+      break
+    end
+
+  end
+
+  pp 'steps', steps
 end
 
-
-lines = File.readlines('./day10.example', chomp: true)
+lines = File.readlines('./day10.input', chomp: true)
 d10p1(lines)
