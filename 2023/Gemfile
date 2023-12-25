@@ -9,3 +9,5 @@ gem 'flamegraph'
 gem 'stackprof'
 gem 'parallel'
 gem 'byebug'
+
+gem "pry", "~> 0.14.2"

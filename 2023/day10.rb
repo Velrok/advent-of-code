@@ -3,6 +3,7 @@
 
 require 'sorbet-runtime'
 require 'sorbet-struct-comparable'
+require 'pry';
 
 extend T::Sig
 
@@ -70,16 +71,24 @@ class Pipe < T::Struct
       [pos.south, pos.west]
     when PipeModel::Start
       [
-        pos.east,
-        pos.west,
         pos.north,
-        pos.south,
         pos.north.east,
-        pos.north.west,
+        pos.east,
         pos.south.east,
-        pos.south.west
+        pos.south,
+        pos.south.west,
+        pos.west,
+        pos.north.west,
       ]
     end
+  end
+
+  sig { params(from: Pos).returns(T::Array[Pos]) }
+  def follow(from)
+    # warn "Following #{from.pretty_inspect} connections #{connections.pretty_inspect}"
+    dest = connections.reject { |pos| pos == from }
+    # warn "dest: #{dest.pretty_inspect}"
+    dest
   end
 end
 
@@ -96,6 +105,16 @@ class Field < T::Struct
   sig { params(pos: Pos).returns(Pipe) }
   def pipe_at(pos)
     T.must(T.must(field[pos.y])[pos.x])
+  end
+
+  sig { returns([Pipe, Pipe]) }
+  def start_connections
+    pipe = start
+    a, b = pipe
+      .connections
+      .map { |pos| pipe_at(pos) }
+      .select { |neighbour_pipe| neighbour_pipe.connections.include?(pipe.pos) }
+    [T.must(a), T.must(b)]
   end
 end
 
@@ -123,65 +142,68 @@ def field_from_lines(lines)
   )
 end
 
-sig { params(field: Field).returns([Pipe, Pipe]) }
-def start_connections(field)
-  pipe = field.start
-  a, b = pipe
-    .connections
-    .map { |pos| field.pipe_at(pos) }
-    .select { |neighbour_pipe| neighbour_pipe.connections.include?(pipe.pos) }
-  [T.must(a), T.must(b)]
-end
-
 sig { params(from: Pipe, way: Pipe, field: Field).returns(Pipe) }
-def follow(from, way, field)
+def f_follow(from, way, field)
   field.pipe_at(
     T.must(
       way.connections
-         .reject{ |pos| pos == from.pos }
-         .first
+        .reject{ |pos| pos == from.pos }
+        .first
     )
   )
 end
 
-sig { params(lines: T::Array[String]).void }
-def d10p1(lines)
-  field = field_from_lines(lines)
-
-  this_from = field.start
-  that_from = field.start
-  this_way, that_way = start_connections(field)
-
-  steps = 0
+sig { params(field: Field).void }
+def d10p1(field)
+  a_origin = field.start.pos
+  b_origin = a_origin
+  a_pipe, b_pipe = field.start_connections
+  steps = 1
 
   loop do
+    a_next = field.pipe_at(T.must(a_pipe.follow(a_origin).first))
+    b_next = field.pipe_at(T.must(b_pipe.follow(b_origin).first))
     steps += 1
 
-    pp '-----'
+    # warn "#{steps}A: #{a_pipe.pretty_inspect} B: #{b_pipe.pretty_inspect}"
 
-    this_from = this_way
-    that_from = that_way
+    break if a_next == b_next || steps > 100_000
 
-    this_way = follow(this_from, this_way, field)
-    that_way = follow(that_from, that_way, field)
-
-    pp 'this>', this_from, this_way
-    pp 'that>', that_from, that_way
-
-
-    if this_way.pos == that_way.pos
-      steps += 1
-      break
-    end
-
-    if this_way.pos == that_from.pos || that_way.pos == this_from.pos
-      break
-    end
-
+    a_origin = a_pipe.pos
+    b_origin = b_pipe.pos
+    a_pipe = a_next
+    b_pipe = b_next
   end
 
-  pp 'steps', steps
+  warn "Steps: #{steps}"
+end
+
+def d10p2(field)
+  a_origin = field.start.pos
+  b_origin = a_origin
+  a_pipe, b_pipe = field.start_connections
+  steps = 1
+
+  loop do
+    a_next = field.pipe_at(T.must(a_pipe.follow(a_origin).first))
+    b_next = field.pipe_at(T.must(b_pipe.follow(b_origin).first))
+    steps += 1
+
+    # warn "#{steps}A: #{a_pipe.pretty_inspect} B: #{b_pipe.pretty_inspect}"
+
+    break if a_next == b_next || steps > 100_000
+
+    a_origin = a_pipe.pos
+    b_origin = b_pipe.pos
+    a_pipe = a_next
+    b_pipe = b_next
+  end
+
+  warn "Steps: #{steps}"
 end
 
 lines = File.readlines('./day10.input', chomp: true)
-d10p1(lines)
+field = field_from_lines(lines)
+
+# d10p1(field)
+d10p2(field)
