@@ -3,20 +3,20 @@
 
 require 'sorbet-runtime'
 require 'sorbet-struct-comparable'
-require 'pry';
+require 'pry'
 
 extend T::Sig
 
 class PipeModel < T::Enum
   enums do
-    Ground = new(".")
-    Vertical = new("|")
-    Horizontal = new("-")
-    NE = new("L")
-    NW = new("J")
-    SE = new("F")
-    SW = new("7")
-    Start = new("S")
+    Ground = new('.')
+    Vertical = new('|')
+    Horizontal = new('-')
+    NE = new('L')
+    NW = new('J')
+    SE = new('F')
+    SW = new('7')
+    Start = new('S')
   end
 end
 
@@ -78,7 +78,7 @@ class Pipe < T::Struct
         pos.south,
         pos.south.west,
         pos.west,
-        pos.north.west,
+        pos.north.west
       ]
     end
   end
@@ -86,12 +86,10 @@ class Pipe < T::Struct
   sig { params(from: Pos).returns(T::Array[Pos]) }
   def follow(from)
     # warn "Following #{from.pretty_inspect} connections #{connections.pretty_inspect}"
-    dest = connections.reject { |pos| pos == from }
+    connections.reject { |pos| pos == from }
     # warn "dest: #{dest.pretty_inspect}"
-    dest
   end
 end
-
 
 class Field < T::Struct
   extend T::Sig
@@ -111,9 +109,9 @@ class Field < T::Struct
   def start_connections
     pipe = start
     a, b = pipe
-      .connections
-      .map { |pos| pipe_at(pos) }
-      .select { |neighbour_pipe| neighbour_pipe.connections.include?(pipe.pos) }
+           .connections
+           .map { |pos| pipe_at(pos) }
+           .select { |neighbour_pipe| neighbour_pipe.connections.include?(pipe.pos) }
     [T.must(a), T.must(b)]
   end
 end
@@ -123,11 +121,11 @@ def field_from_lines(lines)
   start = T.let(nil, T.nilable(Pipe))
   field = lines.each_with_index.map do |line, y|
     line
-      .split("")
+      .split('')
       .each_with_index
       .map do |char, x|
         model = PipeModel.deserialize(char)
-        pos = Pos.new(x: x, y: y)
+        pos = Pos.new(x:, y:)
         pipe = Pipe.new(pos:, model:)
         start = pipe if model == PipeModel::Start
         pipe
@@ -147,7 +145,7 @@ def f_follow(from, way, field)
   field.pipe_at(
     T.must(
       way.connections
-        .reject{ |pos| pos == from.pos }
+        .reject { |pos| pos == from.pos }
         .first
     )
   )
@@ -178,6 +176,7 @@ def d10p1(field)
   warn "Steps: #{steps}"
 end
 
+sig { params(field: Field).void }
 def d10p2(field)
   a_origin = field.start.pos
   b_origin = a_origin
