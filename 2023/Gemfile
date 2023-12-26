@@ -3,11 +3,14 @@
 source "https://rubygems.org"
 
 gem 'sorbet-static-and-runtime'
-gem 'tapioca', require: false, :group => :development
 gem 'sorbet-struct-comparable'
-gem 'flamegraph'
-gem 'stackprof'
-gem 'parallel'
-gem 'byebug'
 
-gem "pry", "~> 0.14.2"
+gem 'tapioca', require: false, :group => :development
+gem 'rubocop', require: false, :group => :development
+
+gem 'flamegraph', require: false, :group => :development
+gem 'stackprof', require: false, :group => :development
+gem 'parallel'
+gem 'byebug', require: false, :group => :development
+
+gem "pry", require: false, :group => :development
