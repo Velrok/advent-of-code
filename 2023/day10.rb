@@ -83,6 +83,28 @@ class Pipe < T::Struct
     end
   end
 
+  sig { returns(String) }
+  def to_s
+    case model
+    when PipeModel::Ground
+      '.'
+    when PipeModel::Vertical
+      '│'
+    when PipeModel::Horizontal
+      '─'
+    when PipeModel::NE
+      '└'
+    when PipeModel::NW
+      '┘'
+    when PipeModel::SE
+      '┌'
+    when PipeModel::SW
+      '┐'
+    when PipeModel::Start
+      'S'
+    end
+  end
+
   sig { params(from: Pos).returns(T::Array[Pos]) }
   def follow(from)
     # warn "Following #{from.pretty_inspect} connections #{connections.pretty_inspect}"
@@ -179,26 +201,50 @@ end
 sig { params(field: Field).void }
 def d10p2(field)
   a_origin = field.start.pos
-  b_origin = a_origin
-  a_pipe, b_pipe = field.start_connections
-  steps = 1
+  a_pipe, = field.start_connections
 
+  edges = T.let([field.start], T::Array[Pipe])
+
+  warn 'looking for edges ...'
   loop do
     a_next = field.pipe_at(T.must(a_pipe.follow(a_origin).first))
-    b_next = field.pipe_at(T.must(b_pipe.follow(b_origin).first))
-    steps += 1
+    edges << a_next
 
-    # warn "#{steps}A: #{a_pipe.pretty_inspect} B: #{b_pipe.pretty_inspect}"
-
-    break if a_next == b_next || steps > 100_000
+    break if a_next == field.start
 
     a_origin = a_pipe.pos
-    b_origin = b_pipe.pos
     a_pipe = a_next
-    b_pipe = b_next
   end
+  warn "found #{edges.length} edges"
 
-  warn "Steps: #{steps}"
+  warn 'classifying field ...'
+  new_picture = field_classifyer(field, edges.map(&:pos).to_set)
+
+  warn 'render ...'
+  File.write('field', render(new_picture))
+  warn 'done'
+end
+
+sig do
+  params(
+    field: Field,
+    loop_positions: T::Set[Pos]
+  ).returns(T::Array[T::Array[String]])
+end
+def field_classifyer(field, loop_positions)
+  (0..field.h).map do |y|
+    (0..field.w).map do |x|
+      pos = Pos.new(x:, y:)
+      loop_positions.include?(pos) ? field.pipe_at(pos).to_s : '.'
+    end
+  end
+end
+
+sig { params(field: T::Array[T::Array[String]]).returns(String) }
+def render(field)
+  field
+    .map { |row| row.join('') }
+    .join("\n")
 end
 
 lines = File.readlines('./day10.input', chomp: true)
