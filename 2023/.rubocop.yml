@@ -23,5 +23,8 @@ Style/MixinUsage:
 Style/Documentation:
   Enabled: false
 
-Metrics/*:
+Metrics:
+  Enabled: false
+
+Naming:
   Enabled: false
