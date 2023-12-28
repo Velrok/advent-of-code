@@ -18,10 +18,10 @@ end
 
 galaxies = T.let([], T::Array[Galaxy])
 
-lines = File.readlines('./day11.example', chomp: true)
+lines = File.readlines('./day11.input', chomp: true)
 
-rows_empty = T.let((0..lines.length).to_a, T::Array[Integer])
-cols_empty = T.let((0..T.must(lines[0]).length).to_a, T::Array[Integer])
+rows_empty = T.let((0..(lines.length - 1)).to_a, T::Array[Integer])
+cols_empty = T.let((0..(T.must(lines[0]).length - 1)).to_a, T::Array[Integer])
 
 lines.each_with_index do |line, y|
   line.chars.each_with_index do |char, x|
@@ -44,28 +44,66 @@ sig do
     g1: Galaxy,
     g2: Galaxy,
     rows_empty: T::Array[Integer],
-    cols_empty: T::Array[Integer]
+    cols_empty: T::Array[Integer],
+    expansion_factor: Integer
   ).returns(Integer)
 end
-def distance(g1, g2, rows_empty, cols_empty)
+def distance(g1, g2, rows_empty, cols_empty, expansion_factor: 2)
   x_min = [g1.x, g2.x].min
   x_max = [g1.x, g2.x].max
   y_min = [g1.y, g2.y].min
   y_max = [g1.y, g2.y].max
-  row_extension = rows_empty.filter { |y| y.between?(y_min, y_max) }.length
-  cols_extension = cols_empty.filter { |x| x.between?(x_min, x_max) }.length
-  (g1.x - g2.x).abs + (g1.y - g2.y).abs + row_extension + cols_extension
+
+  empty_rows_on_route = rows_empty.filter { |y| y.between?(y_min, y_max) }.length
+  empty_cols_on_route = cols_empty.filter { |x| x.between?(x_min, x_max) }.length
+
+  row_extension = (empty_rows_on_route * expansion_factor) - empty_rows_on_route
+  cols_extension = (empty_cols_on_route * expansion_factor) - empty_cols_on_route
+
+  reg_dist = (g1.x - g2.x).abs + (g1.y - g2.y).abs
+  reg_dist + row_extension + cols_extension
 end
 
 pp 'G:', galaxies
-# pp 'rows:', rows_taken
-# pp 'cols', cols_taken
+# pp 'rows:', rows_empty
+# pp 'cols', cols_empty
+
+# g1 = T.must galaxies[0]
+# g7 = T.must galaxies[6]
 # g5 = T.must galaxies[4]
+# g8 = T.must galaxies[7]
 # g9 = T.must galaxies[8]
-# pp distance(g5, g9, rows_empty, cols_empty)
-pp pairs.map { |pair|
-  g1, g2 = pair.to_a
-  dist = distance(T.must(g1), T.must(g2), rows_empty, cols_empty)
-  pp g1, g2, dist
-  dist
-}.sum(0)
+
+# pp 'dist 1->7 (15)', distance(g1, g7, rows_empty, cols_empty)
+# pp 'dist 5->9 (9)', distance(g5, g9, rows_empty, cols_empty)
+# pp 'dist 8->9 (5)', distance(g8, g9, rows_empty, cols_empty)
+
+sig do
+  params(
+    pairs: T::Set[T::Set[Galaxy]],
+    rows_empty: T::Array[Integer],
+    cols_empty: T::Array[Integer]
+  ).void
+end
+def d11p1(pairs, rows_empty:, cols_empty:)
+  pp('P1 total dist', pairs.map do |pair|
+    gal1, gal2 = T.let(pair.to_a, T::Array[Galaxy])
+    distance(T.must(gal1), T.must(gal2), rows_empty, cols_empty)
+  end.sum(0))
+end
+
+sig do
+  params(
+    pairs: T::Set[T::Set[Galaxy]],
+    rows_empty: T::Array[Integer],
+    cols_empty: T::Array[Integer]
+  ).void
+end
+def d11p2(pairs, rows_empty:, cols_empty:)
+  pp('P2 total dist', pairs.map do |pair|
+    gal1, gal2 = T.let(pair.to_a, T::Array[Galaxy])
+    distance(T.must(gal1), T.must(gal2), rows_empty, cols_empty, expansion_factor: 1_000_000)
+  end.sum(0))
+end
+
+d11p2(pairs, rows_empty:, cols_empty:)
