@@ -14,13 +14,12 @@ class Game < T::Struct
     const :green, Integer, default: 0
     const :blue, Integer, default: 0
 
-
-    sig {params(lines: T::Array[String]).returns(Draw)}
+    sig { params(lines: T::Array[String]).returns(Draw) }
     def self.parse(lines)
       h = {}
 
       lines.each do |line|
-        m = /(\d+) (\w+)/.match(line)
+        m = T.must(/(\d+) (\w+)/.match(line))
         count = m[1].to_i
         color = m[2]
         h[color.to_sym] = count
@@ -38,7 +37,7 @@ class Game < T::Struct
   const :game_id, Integer
   const :draws, T::Array[Draw]
 
-  sig {params(line: String).returns(Game)}
+  sig { params(line: String).returns(Game) }
   def self.parse(line)
     m = /Game (\d+): (.*)/.match(line)
 
@@ -46,24 +45,24 @@ class Game < T::Struct
 
     game_id = m[1].to_i
     draws = m[2]
-      &.split(';')
-      &.map(&:strip)
-      &.map do |draw| draw.split(',').map(&:strip) end
-      &.map do |draw| Draw.parse(draw) end
-    Game.new(game_id: game_id, draws: T.must(draws))
+            &.split(';')
+            &.map(&:strip)
+            &.map { |draw| draw.split(',').map(&:strip) }
+            &.map { |draw| Draw.parse(draw) }
+    Game.new(game_id:, draws: T.must(draws))
   end
 
   sig { returns(Game::Draw) }
   def min_draw
     Draw.new(**{
-      red: draws.map(&:red).max || 0,
-      green: draws.map(&:green).max|| 0,
-      blue: draws.map(&:blue).max|| 0
-    })
+               red: draws.map(&:red).max || 0,
+               green: draws.map(&:green).max || 0,
+               blue: draws.map(&:blue).max || 0
+             })
   end
 end
 
-sig {params(games: T::Array[Game]).returns(Integer)}
+sig { params(games: T::Array[Game]).returns(Integer) }
 def part1(games)
   games
     .select do |game|
@@ -75,7 +74,7 @@ def part1(games)
     .sum
 end
 
-sig {params(games: T::Array[Game]).returns(Integer)}
+sig { params(games: T::Array[Game]).returns(Integer) }
 def part2(games)
   games
     .map(&:min_draw)
@@ -83,13 +82,13 @@ def part2(games)
     .sum
 end
 
-puts ">-"
+puts '>-'
 # only 12 red cubes, 13 green cubes, and 14 blue cubes
 games = File
-  .readlines('./day02.input1', chomp: true)
-  .map do |line|
-    Game.parse(line)
-  end
+        .readlines('./day02.input1', chomp: true)
+        .map do |line|
+  Game.parse(line)
+end
 
 # pp part1(games)
 pp part2(games)
