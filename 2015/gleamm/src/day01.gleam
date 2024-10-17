@@ -10,11 +10,16 @@ pub fn main() {
     |> list.first
   let chars = string.split(first_line, on: "")
   let result =
-    list.fold(over: chars, from: 0, with: fn(acc, el) {
-      case el {
-        "(" -> acc + 1
-        ")" -> acc - 1
-        _ -> panic
+    list.fold(over: chars, from: #(0, 0), with: fn(state, el) {
+      let #(pos, current_floor) = state
+      case current_floor {
+        -1 -> state
+        _ ->
+          case el {
+            "(" -> #(pos + 1, current_floor + 1)
+            ")" -> #(pos + 1, current_floor - 1)
+            _ -> panic
+          }
       }
     })
 
