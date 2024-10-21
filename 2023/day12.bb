@@ -2,6 +2,10 @@
 (require '[clojure.pprint :refer [pprint]])
 (require '[clojure.string :as str])
 
+(defn checkable?
+  [{:keys [springs]}]
+  (not (str/includes? springs "?")))
+
 (defn parse-file
   [filename]
   (->> filename
@@ -14,6 +18,8 @@
 
 (defn -main
   []
-  (pprint (parse-file "./day12.example")))
+  (->> (parse-file "./day12.example")
+       (filter checkable?)
+       pprint))
 
 (-main)
