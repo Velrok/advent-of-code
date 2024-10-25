@@ -7,9 +7,7 @@ import utils
 
 fn p1() {
   utils.lines(filename: "inputs/02.p1")
-  |> filter(fn(line) { line != "" })
   |> map(fn(line) {
-    // debug(line)
     let assert [l, w, h] =
       split(line, on: "x")
       |> map(int.parse)
@@ -30,7 +28,6 @@ fn p2() {
   utils.lines(filename: "inputs/02.p1")
   |> filter(fn(line) { line != "" })
   |> map(fn(line) {
-    // debug(line)
     let assert [l, w, h] =
       split(line, on: "x")
       |> map(int.parse)
@@ -54,5 +51,6 @@ fn p2() {
 
 // gleam run -m day02
 pub fn main() {
+  debug(p1())
   debug(p2())
 }

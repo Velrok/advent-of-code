@@ -5,12 +5,11 @@ import utils
 
 // gleam run -m day01
 pub fn main() {
-  let assert Ok(first_line) =
-    utils.lines(filename: "inputs/01.p1")
-    |> list.first
-  let chars = string.split(first_line, on: "")
+  let assert Ok(first_line) = list.first(utils.lines(filename: "inputs/01.p1"))
+
   let result =
-    list.fold(over: chars, from: #(0, 0), with: fn(state, el) {
+    string.split(first_line, on: "")
+    |> list.fold(from: #(0, 0), with: fn(state, el) {
       let #(pos, current_floor) = state
       case current_floor {
         -1 -> state

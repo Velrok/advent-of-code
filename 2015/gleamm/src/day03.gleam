@@ -9,21 +9,15 @@ type Position {
 }
 
 fn p1() {
-  let assert Ok(line) =
-    utils.lines(filename: "./inputs/03.p1")
-    |> first
+  let assert Ok(line) = first(utils.lines(filename: "./inputs/03.p1"))
 
   let starting_location = Position(x: 0, y: 0)
   let #(visited_locations, _) =
     split(line, on: "")
     |> fold(
-      from: #(
-        set.new()
-          |> set.insert(starting_location),
-        starting_location,
-      ),
-      with: fn(agg, instruction) {
-        let #(visited_locations, current_pos) = agg
+      from: #(set.from_list([starting_location]), starting_location),
+      with: fn(state, instruction) {
+        let #(visited_locations, current_pos) = state
         let new_pos = case instruction {
           "^" -> Position(x: current_pos.x, y: current_pos.y + 1)
           ">" -> Position(x: current_pos.x + 1, y: current_pos.y)
@@ -110,5 +104,6 @@ fn p2() {
 
 // gleam run -m day02
 pub fn main() {
+  debug(p1())
   debug(p2())
 }
