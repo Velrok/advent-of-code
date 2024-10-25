@@ -18,8 +18,8 @@ fn init_data(w: Int, h: Int, default: inner) -> Dict(Int, Dict(Int, inner)) {
   |> dict.from_list
 }
 
-pub fn new(width w: Int, height h: Int, nullvalue default: a) {
-  Matrix(width: w, height: h, data: init_data(w, h, default))
+pub fn new(width w: Int, height h: Int, default init_val: a) {
+  Matrix(width: w, height: h, data: init_data(w, h, init_val))
 }
 
 pub fn upsert(
