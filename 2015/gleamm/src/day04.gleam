@@ -1,15 +1,32 @@
 import gleam/io.{debug}
-import gleam/bit_array.{inspect}
+import gleam/bit_array
+import gleam/int
+import gleam/string
+import gleam/crypto.{Md5}
 
-fn p1() {
-  debug(inspect(<<8:size(8)>>))
+fn md5_hash(input: String) -> String {
+  bit_array.from_string(input)
+  |> crypto.hash(Md5, _)
+  |> bit_array.base16_encode
 }
 
-fn p2() {
-  todo
+fn solver(input: String, counter: Int, prefix: String) -> Int {
+  let hash = md5_hash(input <> int.to_string(counter))
+  case string.starts_with(hash, prefix) {
+    True -> counter
+    False -> solver(input, counter + 1, prefix)
+  }
+}
+
+fn part1() {
+  solver("bgvyzdsv", 1, "00000")
+}
+
+fn part2() {
+  solver("bgvyzdsv", 1, "000000")
 }
 
 // gleam run -m day02
 pub fn main() {
-  debug(p1())
+  debug(part2())
 }
