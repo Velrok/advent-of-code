@@ -1,9 +1,9 @@
+import gleam/int
 import gleam/io.{debug}
+import gleam/list
+import gleam/option.{Some}
 import gleam/regexp
 import gleam/string
-import gleam/int
-import gleam/list
-import gleam/option.{None, Some}
 import utils
 
 const instruction_re = "(do\\(\\)|don't\\(\\)|mul\\((\\d{1,3}),(\\d{1,3})\\))"
