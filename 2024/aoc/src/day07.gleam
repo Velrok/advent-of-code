@@ -1,3 +1,7 @@
+import gleam/string
+import gleam/int
+import gleam/list
+
 pub fn main {
   let example = "190: 10 19
 3267: 81 40 27
