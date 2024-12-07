@@ -1,6 +1,8 @@
 import gleam/string
 import gleam/int
 import gleam/list
+import gleam/result
+import gleam/function.{indentity}
 
 pub fn main {
   let example = "190: 10 19
@@ -20,7 +22,7 @@ let numbers =
 right |> string.trim()
 |> string.split(" ")
 |> list.map(int.parse)
-|> result.map_values(funtion.indentity)
+|> result.map_values(indentity)
 }
 
 
