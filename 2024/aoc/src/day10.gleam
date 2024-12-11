@@ -1,12 +1,10 @@
-import gleam/string
 import gleam/int
 import gleam/set
 import gleam/dict
 import gleam/list
-import gleam/result
 import gleam/option.{type Option, None, Some}
 import gleam/io.{debug}
-import utils.{type Point, Grid}
+import utils.{type Grid, type Point}
 import simplifile
 
 fn valid_step(
@@ -23,7 +21,7 @@ fn valid_step(
 }
 
 fn explore(
-  grid: utils.Grid(Int),
+  grid: Grid(Int),
   current_pos: Point,
   current_path: Path,
   previous_pos: Option(Point),
@@ -34,6 +32,7 @@ fn explore(
       case elevation {
         // reached an end!
         9 -> [current_path]
+
         current_elevation -> {
           [utils.north, utils.south, utils.east, utils.west]
           |> list.map(fn(step_fn) {
@@ -61,7 +60,7 @@ fn explore(
   }
 }
 
-fn find_trails(grid: utils.Grid(Int), current_path: Path) -> List(Path) {
+fn find_trails(grid: Grid(Int), current_path: Path) -> List(Path) {
   // gleam list are linked lists so we prepend all elements meaning the last one is always at the front.
   case current_path {
     [current_pos] -> explore(grid, current_pos, current_path, None)
@@ -74,13 +73,10 @@ fn find_trails(grid: utils.Grid(Int), current_path: Path) -> List(Path) {
 }
 
 type Path =
-  List(Point)
+  List(utils.Point)
 
 fn part01(grid, trailheads) {
   trailheads
-  // |> list.drop(2)
-  // |> list.take(1)
-  // |> list.map(fn(trailhead) { #(trailhead, find_trails(grid, trailhead, "")) })
   |> list.map(fn(trailhead) {
     find_trails(grid, [trailhead])
     |> list.map(list.first)
@@ -92,9 +88,6 @@ fn part01(grid, trailheads) {
 
 fn part02(grid, trailheads) {
   trailheads
-  // |> list.drop(2)
-  // |> list.take(1)
-  // |> list.map(fn(trailhead) { #(trailhead, find_trails(grid, trailhead, "")) })
   |> list.map(fn(trailhead) {
     find_trails(grid, [trailhead])
     |> set.from_list()
@@ -116,21 +109,16 @@ pub fn main() {
 
   let assert Ok(input) = simplifile.read(from: "inputs/day10.input")
 
-  let grid =
-    utils.parse_grid(input, fn(s) {
-      let assert Ok(i) =
-        s
-        |> int.parse()
-      i
-    })
+  let grid = utils.parse_grid(input, with: utils.parse_int_or_panic)
 
   let trailheads =
     grid.data
     |> dict.filter(fn(_pos, elevation) { elevation == 0 })
     |> dict.keys
 
-  debug(trailheads)
   // part01(grid, trailheads)
+  // |> debug
+
   part02(grid, trailheads)
   |> debug
 }

@@ -1,4 +1,6 @@
 import simplifile
+import gleam/int
+import gleam/io
 import gleam/dict
 import gleam/result
 import gleam/string
@@ -36,7 +38,7 @@ pub type Grid(cell_type) {
 
 pub fn parse_grid(
   from example: String,
-  parse cell_parser: fn(String) -> a,
+  with cell_parser: fn(String) -> a,
 ) -> Grid(a) {
   let lines = string.split(example, "\n")
   let grid = list.map(lines, string.split(_, ""))
@@ -57,4 +59,17 @@ pub fn parse_grid(
     })
 
   Grid(data: data, width: width, height: height)
+}
+
+pub fn parse_int_or_panic(s: String) -> Int {
+  case
+    s
+    |> int.parse()
+  {
+    Error(_) -> {
+      io.debug("Cant parse " <> s <> " as int!")
+      panic
+    }
+    Ok(i) -> i
+  }
 }
