@@ -80,6 +80,7 @@ fn part01(grid, trailheads) {
   |> list.map(fn(trailhead) {
     find_trails(grid, [trailhead])
     |> list.map(list.first)
+    // basically I implemented P2 first, so this is the only difference between P1 and P2
     |> set.from_list()
     |> set.size()
   })
