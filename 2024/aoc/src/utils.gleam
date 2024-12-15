@@ -81,3 +81,12 @@ pub fn simulate(n: Int, agg, sim_f) {
     _ -> simulate(n - 1, sim_f(agg), sim_f)
   }
 }
+
+pub fn grid_positions(
+  y_range: List(Int),
+  x_range: List(Int),
+) -> List(#(Int, Int)) {
+  use y <- list.flat_map(y_range)
+  use x <- list.map(x_range)
+  #(x, y)
+}
