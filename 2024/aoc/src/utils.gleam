@@ -73,3 +73,11 @@ pub fn parse_int_or_panic(s: String) -> Int {
     Ok(i) -> i
   }
 }
+
+pub fn simulate(n: Int, agg, sim_f) {
+  case n {
+    0 -> agg
+    1 -> sim_f(agg)
+    _ -> simulate(n - 1, sim_f(agg), sim_f)
+  }
+}
