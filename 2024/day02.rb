@@ -59,35 +59,43 @@ class Report
   end
 
   def safe?
-    if increasing?
-      @numbers.each_cons(2).all? do |a, b|
+    check_numbers?(@numbers) ||
+    dampened_numbers.any? {|numbers| check_numbers?(numbers)}
+  end
+
+  def dampened_numbers
+    @numbers.each_with_index.map do |_n, i|
+      @numbers.dup.tap {|nn|
+        nn.delete_at(i)
+      }
+    end
+  end
+
+  def check_numbers?(numbers)
+    if increasing?(numbers)
+      numbers.each_cons(2).all? do |a, b|
         b >= a + 1 && b <= a + 3
       end
     else
-      @numbers.each_cons(2).all? do |a, b|
+      numbers.each_cons(2).all? do |a, b|
         b <= a - 1 && b >= a - 3
       end
     end
   end
 
-  def increasing?
-    @numbers.first < @numbers[1]
+  def increasing?(numbers)
+    numbers.first < numbers[1]
   end
 
 end
 
-def part01
+def main
   reports = File.readlines('day02.input').map do |line|
     Report.from_line(line)
   end
-
-  # reports.each do |report|
-  #   pp report
-  #   pp report.safe?
-  # end
 
   pp reports.filter(&:safe?)
     .size()
 end
 
-part01
+main
