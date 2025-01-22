@@ -1,12 +1,12 @@
-import simplifile
-import gleam/list
-import gleam/string
 import gleam/dict.{type Dict}
 import gleam/io
+import gleam/list
+import gleam/string
+import simplifile
 import vector2d
 
-type Board =
-  Dict(Vec, String)
+// type Board =
+//  Dict(Vec, String)
 
 pub fn main() {
   // let assert Ok(input) = simplifile.read(from: "inputs/day15.input")
