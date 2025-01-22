@@ -32,12 +32,15 @@ def part01
   left.sort!
   right.sort!
 
-  result = left.zip(right).map do |l, r|
-    puts "l: #{l}, r: #{r}"
-    (l - r).abs
-  end.sum
+  result = left
+    .zip(right)
+    .map do |l, r|
+      puts "l: #{l}, r: #{r}"
+      (l - r).abs
+    end
+    .sum
 
-    puts "result: #{result}"
+  puts "result: #{result}"
 end
 
 def part02
