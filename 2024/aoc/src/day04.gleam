@@ -23,11 +23,11 @@ fn is_true(x) {
   x == True
 }
 
-fn kernal_matches(input_cutout, kernal: Kernal) -> Bool {
+fn kernel_matches(input_cutout, kernel: Kernel) -> Bool {
   let results =
-    list.map2(kernal.matrix, input_cutout, with: fn(kernal_row, input_row) {
-      list.map2(kernal_row, input_row, with: fn(kernal_cell, input_cell) {
-        case kernal_cell {
+    list.map2(kernel.matrix, input_cutout, with: fn(kernel_row, input_row) {
+      list.map2(kernel_row, input_row, with: fn(kernel_cell, input_cell) {
+        case kernel_cell {
           "." -> True
           x -> x == input_cell
         }
@@ -39,24 +39,27 @@ fn kernal_matches(input_cutout, kernal: Kernal) -> Bool {
   |> list.all(is_true)
 }
 
-fn scan_kernal(input, kernal: Kernal) {
+fn scan_kernel(input, kernel: Kernel) {
   let #(input_width, input_height) = matrix_dimension(input)
-  let #(kernal_width, kernal_height) = matrix_dimension(kernal.matrix)
+  let #(kernel_width, kernel_height) = matrix_dimension(kernel.matrix)
 
-  range(0, input_height - kernal_height)
+  range(0, input_height - kernel_height)
   |> map(fn(y) {
     // each row
-    range(0, input_width - kernal_width)
+    range(0, input_width - kernel_width)
     |> map(fn(x) {
       // each cell
       let input_cutout =
         list.split(input, y)
         |> pair.second
-        |> list.take(kernal_height)
+        |> list.take(kernel_height)
         |> list.map(fn(input_row) {
-          input_row |> list.split(x) |> pair.second |> list.take(kernal_width)
+          input_row
+          |> list.split(x)
+          |> pair.second
+          |> list.take(kernel_width)
         })
-      kernal_matches(input_cutout, kernal)
+      kernel_matches(input_cutout, kernel)
     })
   })
   |> list.flatten
@@ -70,49 +73,48 @@ fn scan_kernal(input, kernal: Kernal) {
 
 pub fn part1(input) {
   [
-    make_kernal("XMAS"),
-    make_kernal("SAMX"),
-    make_kernal(
+    make_kernel("XMAS"),
+    make_kernel("SAMX"),
+    make_kernel(
       "X
 M
 A
 S",
     ),
-    make_kernal(
+    make_kernel(
       "S
 A
 M
 X",
     ),
-    make_kernal(
+    make_kernel(
       "S...
 .A..
 ..M.
 ...X",
     ),
-    make_kernal(
+    make_kernel(
       "...S
 ..A.
 .M..
 X...",
     ),
-    make_kernal(
+    make_kernel(
       "X...
 .M..
 ..A.
 ...S",
     ),
-    make_kernal(
+    make_kernel(
       "...X
 ..M.
 .A..
 S...",
     ),
   ]
-  |> list.map(fn(kernal) {
-    debug("kernal")
-    debug(kernal)
-    scan_kernal(input, kernal)
+  |> list.map(fn(kernel) {
+    debug(kernel)
+    scan_kernel(input, kernel)
     |> list.filter(is_true)
     |> list.length
     |> debug
@@ -120,12 +122,12 @@ S...",
   |> int.sum
 }
 
-type Kernal {
-  Kernal(matrix: List(List(String)))
+type Kernel {
+  Kernel(matrix: List(List(String)))
 }
 
-fn make_kernal(str) {
-  Kernal(char_matrix(str))
+fn make_kernel(str) {
+  Kernel(char_matrix(str))
 }
 
 pub fn main() {
@@ -151,8 +153,12 @@ XMAS.S
 .X...."
 
   let assert Ok(puzzle_input) = simplifile.read(from: "inputs/day04.input")
+  let puzzle_input = example
 
-  let input = puzzle_input |> char_matrix
+  let input =
+    puzzle_input
+    |> char_matrix
 
-  part1(input) |> debug
+  part1(input)
+  |> debug
 }
