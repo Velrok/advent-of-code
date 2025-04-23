@@ -1,15 +1,16 @@
+import gleam/int
 import gleam/io.{debug}
 import gleam/list
-import gleam/string
 import gleam/result
-import gleam/int
-import gleam/regex.{type Regex, Match}
+import gleam/string
+
 import gleam/option.{None, Some}
-import utils
+import gleam/regexp.{type Regexp, Match}
 import matrix
 import position.{type Position}
+import utils
 
-fn parse_line(line: String, pattern: Regex) {
+fn parse_line(line: String, pattern: Regexp) {
   todo
 }
 
@@ -23,7 +24,7 @@ pub type Instruction {
   Instruction(op: Op, top_left: Position, bottom_right: Position)
 }
 
-fn interpret_results(result: List(regex.Match)) -> Instruction {
+fn interpret_results(result: List(regexp.Match)) -> Instruction {
   let assert [
     Match(
       content: _,
@@ -32,7 +33,7 @@ fn interpret_results(result: List(regex.Match)) -> Instruction {
   ] = result
   let assert [p1x, p1y, p2x, p2y] =
     [p1x, p1y, p2x, p2y]
-    |> list.map(int.parse(_))
+    |> list.map(int.parse)
     |> result.values
 
   Instruction(
@@ -49,13 +50,13 @@ fn interpret_results(result: List(regex.Match)) -> Instruction {
 
 fn part1() {
   let assert Ok(pattern) =
-    regex.from_string(
+    regexp.from_string(
       "(turn on|turn off|toggle) (\\d+),(\\d+) through (\\d+),(\\d+)",
     )
 
   let instructions =
     utils.lines("./inputs/06.p1")
-    |> list.map(regex.scan(with: pattern, content: _))
+    |> list.map(regexp.scan(with: pattern, content: _))
     |> list.map(interpret_results)
 
   let lights = matrix.new(width: 1000, height: 1000, default: False)

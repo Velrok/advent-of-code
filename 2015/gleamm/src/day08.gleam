@@ -1,10 +1,10 @@
+import gleam/int
 import gleam/io.{debug}
 import gleam/list
-import gleam/int
+import gleam/result
 import gleam/string.{
   from_utf_codepoints, inspect, to_utf_codepoints, utf_codepoint,
 }
-import gleam/result
 import utils
 
 fn length_diff(line: String) -> Int {
@@ -58,7 +58,7 @@ fn codepoints() -> List(UtfCodepoint) {
     |> list.map(to_utf_codepoints)
     |> list.map(list.first)
     |> result.values
-  list.concat([ascii_codes, extras])
+  // list.concat([ascii_codes, extras])
 }
 
 // gleam run -m day01
