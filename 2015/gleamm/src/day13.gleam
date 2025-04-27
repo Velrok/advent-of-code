@@ -19,9 +19,34 @@ pub fn main() {
     )
   let matches = regexp.scan(re, input)
   let nodes = matches |> list.map(node_from_match)
-  let people = list.map(nodes, fn(n) { n.person }) |> list.unique()
+
+  echo part1(nodes)
+  echo part2(nodes)
+}
+
+fn part1(nodes: List(Node)) {
+  let people = extract_people(nodes)
   let seating_orders = list.permutations(people)
-  echo seating_orders |> list.map(score(nodes, _)) |> list.max(int.compare)
+  seating_orders |> list.map(score(nodes, _)) |> list.max(int.compare)
+}
+
+fn part2(nodes: List(Node)) {
+  let others_and_me =
+    nodes
+    |> list.append(
+      extract_people(nodes)
+      |> list.map(Node(person: "me", neighbour: _, gain: 0)),
+    )
+    |> list.append(
+      extract_people(nodes)
+      |> list.map(Node(person: _, neighbour: "me", gain: 0)),
+    )
+
+  part1(others_and_me)
+}
+
+fn extract_people(nodes: List(Node)) {
+  list.map(nodes, fn(n) { n.person }) |> list.unique()
 }
 
 fn score(nodes: List(Node), seating_arrangement: List(String)) -> Int {
