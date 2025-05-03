@@ -32,7 +32,9 @@ fn part02() {
   |> list.flat_map(leaders_at(reindeer, _))
   |> list.group(function.identity)
   |> dict.map_values(fn(_r, l) { list.length(l) })
-  |> dict.fold(0, fn(acc, _r, dist) { int.max(acc, dist) })
+  |> dict.values
+  |> list.max(int.compare)
+  |> result.lazy_unwrap(fn() { panic })
   |> echo
 }
 
