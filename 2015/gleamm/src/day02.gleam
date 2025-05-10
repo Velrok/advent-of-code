@@ -1,8 +1,7 @@
-import gleam/io.{debug}
-import gleam/list.{filter, map, reduce, take}
-import gleam/string.{split}
 import gleam/int
+import gleam/list.{filter, map, reduce, take}
 import gleam/result
+import gleam/string.{split}
 import utils
 
 fn p1() {
@@ -51,6 +50,6 @@ fn p2() {
 
 // gleam run -m day02
 pub fn main() {
-  debug(p1())
-  debug(p2())
+  echo p1()
+  echo p2()
 }

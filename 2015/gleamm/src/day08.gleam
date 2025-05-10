@@ -1,7 +1,7 @@
 import gleam/int
-import gleam/io.{debug}
 import gleam/list
-import gleam/result
+
+// import gleam/result
 import gleam/string.{
   from_utf_codepoints, inspect, to_utf_codepoints, utf_codepoint,
 }
@@ -17,9 +17,9 @@ fn length_diff(line: String) -> Int {
       !list.contains(excluded_codepoints, codepoint)
     })
     |> list.length
-  debug(#("line", line))
-  debug(#("original", original_len))
-  debug(#("decoded", decoded_len))
+  echo #("line", line)
+  echo #("original", original_len)
+  echo #("decoded", decoded_len)
   original_len - decoded_len
 }
 
@@ -28,20 +28,21 @@ fn test_input() {
   |> list.map(length_diff)
 }
 
-fn part1() {
+pub fn part1() {
   utils.lines("inputs/08.p1")
   |> list.map(length_diff)
   |> list.reduce(int.add)
 }
 
-fn part2() {
+pub fn part2() {
   todo
 }
 
 fn codepoints() -> List(UtfCodepoint) {
-  let extras =
-    "\"\\"
-    |> to_utf_codepoints
+  todo
+  // let extras =
+  //   "\"\\"
+  //   |> to_utf_codepoints
   // // a-z
   // let az =
   //   list.range(0x61, 0x7A)
@@ -52,19 +53,19 @@ fn codepoints() -> List(UtfCodepoint) {
   //   list.range(0x41, 0x5A)
   //   |> list.map(utf_codepoint)
   //   |> result.values
-  let ascii_codes =
-    list.range(0, 127)
-    |> list.map(fn(asci) { "\\x" <> int.to_string(asci) })
-    |> list.map(to_utf_codepoints)
-    |> list.map(list.first)
-    |> result.values
+  // let ascii_codes =
+  //   list.range(0, 127)
+  //   |> list.map(fn(asci) { "\\x" <> int.to_string(asci) })
+  //   |> list.map(to_utf_codepoints)
+  //   |> list.map(list.first)
+  //   |> result.values
   // list.concat([ascii_codes, extras])
 }
 
 // gleam run -m day01
 pub fn main() {
-  // debug(codepoints())
-  debug(test_input())
-  // debug(part1())
-  // debug(part2())
+  // echo codepoints()
+  echo test_input()
+  // echo part1()
+  // echo part2()
 }

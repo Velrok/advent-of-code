@@ -1,8 +1,7 @@
-import gleam/io.{debug}
 import gleam/bit_array
+import gleam/crypto.{Md5}
 import gleam/int
 import gleam/string
-import gleam/crypto.{Md5}
 
 fn md5_hash(input: String) -> String {
   bit_array.from_string(input)
@@ -18,7 +17,7 @@ fn solver(input: String, counter: Int, prefix: String) -> Int {
   }
 }
 
-fn part1() {
+pub fn part1() {
   solver("bgvyzdsv", 1, "00000")
 }
 
@@ -28,5 +27,5 @@ fn part2() {
 
 // gleam run -m day02
 pub fn main() {
-  debug(part2())
+  echo part2()
 }

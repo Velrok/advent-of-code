@@ -1,14 +1,13 @@
-import gleam/io.{debug}
 import gleam/list.{first, fold}
-import gleam/string.{split}
 import gleam/set
+import gleam/string.{split}
 import utils
 
 type Position {
   Position(x: Int, y: Int)
 }
 
-fn p1() {
+pub fn p1() {
   let assert Ok(line) = first(utils.lines(filename: "./inputs/03.p1"))
 
   let starting_location = Position(x: 0, y: 0)
@@ -104,6 +103,5 @@ fn p2() {
 
 // gleam run -m day02
 pub fn main() {
-  debug(p1())
-  debug(p2())
+  echo p2()
 }

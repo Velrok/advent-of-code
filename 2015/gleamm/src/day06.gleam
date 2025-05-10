@@ -1,18 +1,18 @@
 import gleam/int
-import gleam/io.{debug}
 import gleam/list
 import gleam/result
-import gleam/string
 
-import gleam/option.{None, Some}
-import gleam/regexp.{type Regexp, Match}
-import matrix
+import gleam/option.{Some}
+import gleam/regexp.{Match}
+
+// import matrix
 import position.{type Position}
-import utils
 
-fn parse_line(line: String, pattern: Regexp) {
-  todo
-}
+// import utils
+
+// fn parse_line(line: String, pattern: Regexp) {
+//   todo
+// }
 
 pub type Op {
   On
@@ -24,7 +24,7 @@ pub type Instruction {
   Instruction(op: Op, top_left: Position, bottom_right: Position)
 }
 
-fn interpret_results(result: List(regexp.Match)) -> Instruction {
+pub fn interpret_results(result: List(regexp.Match)) -> Instruction {
   let assert [
     Match(
       content: _,
@@ -49,22 +49,23 @@ fn interpret_results(result: List(regexp.Match)) -> Instruction {
 }
 
 fn part1() {
-  let assert Ok(pattern) =
-    regexp.from_string(
-      "(turn on|turn off|toggle) (\\d+),(\\d+) through (\\d+),(\\d+)",
-    )
-
-  let instructions =
-    utils.lines("./inputs/06.p1")
-    |> list.map(regexp.scan(with: pattern, content: _))
-    |> list.map(interpret_results)
-
-  let lights = matrix.new(width: 1000, height: 1000, default: False)
-}
-
-fn part2() {
   todo
+  // let assert Ok(pattern) =
+  //   regexp.from_string(
+  //     "(turn on|turn off|toggle) (\\d+),(\\d+) through (\\d+),(\\d+)",
+  //   )
+
+  // let instructions =
+  //   utils.lines("./inputs/06.p1")
+  //   |> list.map(regexp.scan(with: pattern, content: _))
+  //   |> list.map(interpret_results)
+
+  // let lights = matrix.new(width: 1000, height: 1000, default: False)
 }
+
+// fn part2() {
+//   todo
+// }
 
 // fn matrix_test() {
 //   let m = matrix.new(width: 5, height: 3, default: False)
@@ -79,7 +80,7 @@ fn part2() {
 
 // gleam run -m day01
 pub fn main() {
-  // debug(matrix_test())
-  debug(part1())
-  // debug(part2())
+  // echo matrix_test()
+  echo part1()
+  // echo part2()
 }

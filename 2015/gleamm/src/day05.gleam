@@ -1,7 +1,6 @@
-import gleam/io.{debug}
+import gleam/dict
 import gleam/list
 import gleam/set
-import gleam/dict
 import gleam/string
 import utils
 
@@ -47,9 +46,9 @@ pub fn p1() {
 // like xyxy (xy) or aabcdefgaa (aa), but not like aaa (aa, but it overlaps).
 // It contains at least one letter which repeats with exactly one letter between them, like xyx,
 // abcdefeghi (efe), or even aaa.
-fn is_nice_2(line: String) {
-  has_non_overlapping_pairs(line)
-}
+// fn is_nice_2(line: String) {
+//   has_non_overlapping_pairs(line)
+// }
 
 pub type CharPair {
   CharPair(
@@ -91,14 +90,14 @@ fn has_non_overlapping_pairs(line: String) {
   })
 }
 
-pub fn p2() {
-  todo
-  // utils.lines(filename: "./inputs/05.p1")
-  // |> list.count(is_nice_2)
-}
+// pub fn p2() {
+//   todo
+//   // utils.lines(filename: "./inputs/05.p1")
+//   // |> list.count(is_nice_2)
+// }
 
 pub fn main() {
-  debug(has_non_overlapping_pairs("aaaabbc"))
+  echo has_non_overlapping_pairs("aaaabbc")
 }
 // [
 // CharPair("a", 2, "a", 3),
