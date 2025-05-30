@@ -15,3 +15,6 @@ python/day01/lib/python3.9
 2024/*.input
 2024/aoc/inputs/*.input
 2024/aoc/inputs/day15.example
+2015/ruby/sorbet
+2015/ruby/inputs
+2015/ruby/bin
