@@ -1,19 +1,86 @@
+import gleam/dict
 import gleam/int
 import gleam/list
-import gleam/option.{type Option}
+import gleam/option.{type Option, None, Some}
 import gleam/regexp
 import gleam/string
 import utils
 
-fn part1(circuts) {
-  circuts
-  |> list.map(fn(x) { echo x })
+fn part1(circuts: List(Circut), state: dict.Dict(String, Int)) {
+  let #(new_state, remaining_instructions) = apply_all(circuts, state)
+  case remaining_instructions {
+    [] -> dict.get(new_state, "a")
+    [_, ..] -> part1(remaining_instructions, new_state)
+  }
+}
+
+fn apply_all(
+  circuts: List(Circut),
+  state: dict.Dict(String, Int),
+) -> #(dict.Dict(String, Int), List(Circut)) {
+  list.fold(circuts, #(state, []), fn(agg, circut) {
+    let #(state, remaining_circuts) = agg
+    let result = apply(circut, state)
+    case result {
+      Error(_) -> #(state, list.append(remaining_circuts, [circut]))
+      Ok(val) -> #(dict.insert(state, circut.output, val), remaining_circuts)
+    }
+  })
+}
+
+fn apply(circut: Circut, state: dict.Dict(String, Int)) -> Result(Int, Nil) {
+  let #(input_l, input_r) = case list.map(circut.inputs, dict.get(state, _)) {
+    [input_l, input_r] -> #(input_l, input_r)
+    [] -> #(Error(Nil), Error(Nil))
+    [input_l] -> #(input_l, Error(Nil))
+    [_, _, _, ..] -> panic
+  }
+  let lookup_and_apply = fn(l, r, input_l, input_r, int_op) {
+    case l, r {
+      Some(l), Some(r) -> Ok(int_op(l, r))
+      None, Some(r) ->
+        case input_l {
+          Error(_) -> Error(Nil)
+          Ok(in_l) -> Ok(int_op(in_l, r))
+        }
+      Some(l), None ->
+        case input_l {
+          Error(_) -> Error(Nil)
+          Ok(in_l) -> Ok(int_op(l, in_l))
+        }
+      None, None -> {
+        case input_l, input_r {
+          Ok(in_l), Ok(in_r) -> Ok(int_op(in_l, in_r))
+          _, _ -> Error(Nil)
+        }
+      }
+    }
+  }
+  case circut.operation {
+    Const(c) -> Ok(c)
+    And(l, r) -> lookup_and_apply(l, r, input_l, input_r, int.bitwise_and)
+    Or(l, r) -> lookup_and_apply(l, r, input_l, input_r, int.bitwise_or)
+    Lshift(l, r) ->
+      lookup_and_apply(l, Some(r), input_l, input_r, int.bitwise_shift_left)
+    Rshift(l, r) ->
+      lookup_and_apply(l, Some(r), input_l, input_r, int.bitwise_shift_right)
+    Not(l) ->
+      case l {
+        None ->
+          case input_l {
+            Error(_) -> Error(Nil)
+            Ok(l) -> Ok(int.bitwise_not(l))
+          }
+        Some(l) -> Ok(int.bitwise_not(l))
+      }
+  }
 }
 
 // gleam run -m day07
 pub fn main() {
   let circuts = parse("./inputs/day07.example")
-  part1(circuts)
+  let state: dict.Dict(String, Int) = dict.new()
+  echo part1(circuts, state)
 }
 
 pub type Operation {
