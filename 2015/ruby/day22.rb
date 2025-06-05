@@ -36,33 +36,104 @@ class RechargeEffect < T::Struct
   const :remaining_rounds, Integer
 end
 
-class Player < T::Struct
-  const :hp, Integer
-  const :mana, Integer
-  const :ac, Integer, default: 0
+class Player
+  extend T::Sig
+
+  sig { returns(Integer) }
+  attr_reader :hp
+
+  sig { returns(Integer) }
+  attr_reader :mana
+
+  sig { returns(Integer) }
+  attr_reader :ac
+
+  sig { params(hp: Integer, mana: Integer, ac: Integer).void }
+  def initialize(hp:, mana:, ac: 0)
+    @hp = hp
+    @mana = mana
+    @ac = ac
+  end
+
+  sig { params(hp: Integer, mana: Integer, ac: Integer).returns(Player) }
+  def with(hp: self.hp, mana: self.mana, ac: self.ac)
+    Player.new(hp: hp, mana: mana, ac: ac)
+  end
+
+  sig { void }
+  def print
+    puts "- Player has #{hp} hit points, #{ac} armor, #{mana} mana"
+  end
 end
 
 class Boss < T::Struct
+  extend T::Sig
+
   const :hp, Integer
   const :dmg, Integer
+
+  sig { void }
+  def print
+    puts "- Boss has #{hp} hit points"
+  end
 end
 
 Effect = T.type_alias { T.any(PoisionEffect, ShieldEffect, RechargeEffect) }
 SpellSeq = T.type_alias { T::Array[Spell] }
+GameResult = T.type_alias { T.any(GameState, Player, Boss, NilClass) }
 
-class GameState < T::Struct
+class GameState
   extend T::Sig
 
-  const :player, Player
-  const :boss, Boss
-  const :active_effects, T::Array[Effect], default: []
-  const :round, Integer, default: 0
+  sig { returns(Player) }
+  attr_reader :player
 
-  sig { returns(T.any(Player, Boss, NilClass)) }
+  sig { returns(Boss) }
+  attr_reader :boss
+
+  sig { returns(T::Array[Effect]) }
+  attr_reader :active_effects
+
+  sig { returns(Integer) }
+  attr_reader :round
+
+  sig do
+    params(
+      player: Player,
+      boss: Boss,
+      active_effects: T::Array[Effect],
+      round: Integer
+    ).void
+  end
+  def initialize(player:, boss:, active_effects: [], round: 1)
+    @player = player
+    @boss = boss
+    @active_effects = active_effects
+    @round = round
+  end
+
+  sig do
+    params(
+      player: Player,
+      boss: Boss,
+      active_effects: T::Array[Effect],
+      round: Integer
+    ).returns(GameState)
+  end
+  def with(player: self.player, boss: self.boss, active_effects: self.active_effects, round: self.round)
+    GameState.new(
+      player: player,
+      boss: boss,
+      active_effects: active_effects,
+      round: round
+    )
+  end
+
+  sig { returns(GameResult) }
   def winner
     return player if boss.hp <= 0
     return boss if player.hp <= 0
-    return boss if player.mana < 53
+    return boss if player.mana <= 0
 
     nil
   end
@@ -81,11 +152,17 @@ sig do
 end
 def simulate(game_state, spell_seq)
   spell_seq.each do |spell|
+    puts "-- Player turn (#{game_state.round}) --"
+    game_state.player.print
+    game_state.boss.print
     game_state = apply_effects(game_state)
     game_state = cast_spell(game_state, spell)
     game_state = next_turn(game_state)
     return T.must(game_state.winner) if game_state.winner
 
+    puts "-- Boss turn (#{game_state.round}) --"
+    game_state.player.print
+    game_state.boss.print
     game_state = apply_effects(game_state)
     game_state = boss_turn(game_state)
     game_state = next_turn(game_state)
@@ -101,7 +178,6 @@ MANA_RECHARGE = 101
 
 sig { params(game_state: GameState).returns(GameState) }
 def next_turn(game_state)
-  pp game_state
   game_state.with(round: game_state.round + 1)
 end
 
@@ -111,9 +187,11 @@ sig do
   ).returns(GameState)
 end
 def boss_turn(game_state)
+  effective_dmg = [game_state.boss.dmg - game_state.player.ac, 1].max
+  puts "Boss deals #{effective_dmg} damage"
   game_state.with(
     player: game_state.player.with(
-      hp: game_state.player.hp - [game_state.boss.dmg - game_state.player.ac, 1].max
+      hp: game_state.player.hp - effective_dmg
     )
   )
 end
@@ -127,16 +205,35 @@ end
 def cast_spell(game_state, spell)
   boss = game_state.boss
   player = game_state.player
+  mana_costs = case spell
+               when Spell::MagicMissile
+                 53
+               when Spell::Drain
+                 73
+               when Spell::Shield
+                 113
+               when Spell::Poison
+                 173
+               when Spell::Recharge
+                 229
+               else
+                 T.absurd(spell)
+               end
+  player = player.with(mana: player.mana - mana_costs)
+  game_state = game_state.with(player: player)
 
   case spell
   when Spell::MagicMissile
+    puts 'Player casts MagicMissile dealing 4 damage'
     game_state.with(boss: boss.with(hp: boss.hp - 4))
   when Spell::Drain
+    puts 'Player casts Drain dealing 2 damage and healing 2'
     game_state.with(
       boss: boss.with(hp: boss.hp - 2),
       player: player.with(hp: player.hp + 2)
     )
   when Spell::Shield
+    puts 'Player casts Shield'
     game_state.with(
       active_effects: append_active_effect_only(
         game_state.active_effects,
@@ -144,6 +241,7 @@ def cast_spell(game_state, spell)
       )
     )
   when Spell::Poison
+    puts 'Player casts Poison'
     game_state.with(
       active_effects: append_active_effect_only(
         game_state.active_effects,
@@ -151,6 +249,7 @@ def cast_spell(game_state, spell)
       )
     )
   when Spell::Recharge
+    puts 'Player casts Recharge'
     game_state.with(
       active_effects: append_active_effect_only(
         game_state.active_effects,
@@ -169,8 +268,9 @@ end
 def apply_effects(game_state)
   starting_state = game_state.with(
     active_effects: [],
-    # reset AC, it will only be increased if the shield effect is active
-    player: game_state.player.with(ac: 0)
+    player: game_state.player.with(
+      ac: 0
+    )
   )
 
   T.let(
@@ -184,18 +284,21 @@ def apply_effects(game_state)
 
       case effect
       when PoisionEffect
-        state.with(
+        puts "Poison deals #{POISON_DMG} damage; its timer is now #{new_effect.remaining_rounds}"
+        GameState.new(
           active_effects: active_effects,
           player: player,
           boss: boss.with(hp: boss.hp - POISON_DMG)
         )
       when ShieldEffect
+        puts "Shild sets player AC to #{SHIELD_AC}; its timer is now #{new_effect.remaining_rounds}"
         state.with(
           active_effects: active_effects,
           player: player.with(ac: SHIELD_AC),
           boss: boss.with(hp: boss.hp - POISON_DMG)
         )
       when RechargeEffect
+        puts "Recharge adds #{MANA_RECHARGE} mana; its timer is now #{new_effect.remaining_rounds}"
         state.with(
           active_effects: active_effects,
           player: player.with(mana: player.mana + MANA_RECHARGE),
@@ -219,22 +322,27 @@ def still_active?(effect)
   effect.remaining_rounds > 0
 end
 
-sig { void }
-def part1
-  # game_state = GameState.new(
-  #   player: Player.new(hp: 10, mana: 250, ac: 0),
-  #   boss: Boss.new(hp: 13, dmg: 8)
-  # )
-  #
-  # pp game_state.with(player: Player.new(hp: 0, mana: 0, ac: 0))
-
+sig { returns(GameResult) }
+def example1
   simulate(
     GameState.new(
       player: Player.new(hp: 10, mana: 250, ac: 0),
       boss: Boss.new(hp: 13, dmg: 8)
     ),
-    [Spell::Poison]
+    [Spell::Poison, Spell::MagicMissile]
   )
 end
 
-part1
+sig { returns(GameResult) }
+def example2
+  simulate(
+    GameState.new(
+      player: Player.new(hp: 10, mana: 250, ac: 0),
+      boss: Boss.new(hp: 13, dmg: 8)
+    ),
+    [Spell::Recharge, Spell::Shield, Spell::Drain, Spell::Poison, Spell::MagicMissile]
+  )
+end
+
+# pp ['example1', example1]
+pp ['example2', example2]
