@@ -7,7 +7,7 @@
 // import simplifile
 
 pub fn main() {
-  todo
+  panic
   // let assert Ok(puzzle_input) = simplifile.read("./inputs/day12.json")
   // echo part2(puzzle_input)
 }

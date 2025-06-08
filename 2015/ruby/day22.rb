@@ -152,18 +152,24 @@ sig do
 end
 def simulate(game_state, spell_seq)
   spell_seq.each do |spell|
-    puts "-- Player turn (#{game_state.round}) --"
+    puts '-- Player turn --'
+    # puts "-- Player turn (#{game_state.round}) --"
     game_state.player.print
     game_state.boss.print
     game_state = apply_effects(game_state)
+    return T.must(game_state.winner) if game_state.winner
+
     game_state = cast_spell(game_state, spell)
     game_state = next_turn(game_state)
     return T.must(game_state.winner) if game_state.winner
 
-    puts "-- Boss turn (#{game_state.round}) --"
+    # puts "-- Boss turn (#{game_state.round}) --"
+    puts '-- Boss turn --'
     game_state.player.print
     game_state.boss.print
     game_state = apply_effects(game_state)
+    return T.must(game_state.winner) if game_state.winner
+
     game_state = boss_turn(game_state)
     game_state = next_turn(game_state)
     return T.must(game_state.winner) if game_state.winner
@@ -188,7 +194,7 @@ sig do
 end
 def boss_turn(game_state)
   effective_dmg = [game_state.boss.dmg - game_state.player.ac, 1].max
-  puts "Boss deals #{effective_dmg} damage"
+  puts "Boss attacks for #{effective_dmg} damage."
   game_state.with(
     player: game_state.player.with(
       hp: game_state.player.hp - effective_dmg
@@ -205,35 +211,21 @@ end
 def cast_spell(game_state, spell)
   boss = game_state.boss
   player = game_state.player
-  mana_costs = case spell
-               when Spell::MagicMissile
-                 53
-               when Spell::Drain
-                 73
-               when Spell::Shield
-                 113
-               when Spell::Poison
-                 173
-               when Spell::Recharge
-                 229
-               else
-                 T.absurd(spell)
-               end
-  player = player.with(mana: player.mana - mana_costs)
+  player = player.with(mana: player.mana - mana_costs(spell))
   game_state = game_state.with(player: player)
 
   case spell
   when Spell::MagicMissile
-    puts 'Player casts MagicMissile dealing 4 damage'
+    puts 'Player casts MagicMissile dealing 4 damage.'
     game_state.with(boss: boss.with(hp: boss.hp - 4))
   when Spell::Drain
-    puts 'Player casts Drain dealing 2 damage and healing 2'
+    puts 'Player casts Drain dealing 2 damage and healing 2.'
     game_state.with(
       boss: boss.with(hp: boss.hp - 2),
       player: player.with(hp: player.hp + 2)
     )
   when Spell::Shield
-    puts 'Player casts Shield'
+    puts 'Player casts Shield.'
     game_state.with(
       active_effects: append_active_effect_only(
         game_state.active_effects,
@@ -241,7 +233,7 @@ def cast_spell(game_state, spell)
       )
     )
   when Spell::Poison
-    puts 'Player casts Poison'
+    puts 'Player casts Poison.'
     game_state.with(
       active_effects: append_active_effect_only(
         game_state.active_effects,
@@ -249,13 +241,31 @@ def cast_spell(game_state, spell)
       )
     )
   when Spell::Recharge
-    puts 'Player casts Recharge'
+    puts 'Player casts Recharge.'
     game_state.with(
       active_effects: append_active_effect_only(
         game_state.active_effects,
         RechargeEffect.new(remaining_rounds: 5)
       )
     )
+  else
+    T.absurd(spell)
+  end
+end
+
+sig { params(spell: Spell).returns(Integer) }
+def mana_costs(spell)
+  case spell
+  when Spell::MagicMissile
+    53
+  when Spell::Drain
+    73
+  when Spell::Shield
+    113
+  when Spell::Poison
+    173
+  when Spell::Recharge
+    229
   else
     T.absurd(spell)
   end
@@ -284,21 +294,21 @@ def apply_effects(game_state)
 
       case effect
       when PoisionEffect
-        puts "Poison deals #{POISON_DMG} damage; its timer is now #{new_effect.remaining_rounds}"
+        puts "Poison deals #{POISON_DMG} damage; its timer is now #{new_effect.remaining_rounds}."
         GameState.new(
           active_effects: active_effects,
           player: player,
           boss: boss.with(hp: boss.hp - POISON_DMG)
         )
       when ShieldEffect
-        puts "Shild sets player AC to #{SHIELD_AC}; its timer is now #{new_effect.remaining_rounds}"
+        puts "Shild sets player AC to #{SHIELD_AC}; its timer is now #{new_effect.remaining_rounds}."
         state.with(
           active_effects: active_effects,
           player: player.with(ac: SHIELD_AC),
           boss: boss.with(hp: boss.hp - POISON_DMG)
         )
       when RechargeEffect
-        puts "Recharge adds #{MANA_RECHARGE} mana; its timer is now #{new_effect.remaining_rounds}"
+        puts "Recharge adds #{MANA_RECHARGE} mana; its timer is now #{new_effect.remaining_rounds}."
         state.with(
           active_effects: active_effects,
           player: player.with(mana: player.mana + MANA_RECHARGE),
@@ -338,9 +348,15 @@ def example2
   simulate(
     GameState.new(
       player: Player.new(hp: 10, mana: 250, ac: 0),
-      boss: Boss.new(hp: 13, dmg: 8)
+      boss: Boss.new(hp: 14, dmg: 8)
     ),
-    [Spell::Recharge, Spell::Shield, Spell::Drain, Spell::Poison, Spell::MagicMissile]
+    [
+      Spell::Recharge,
+      Spell::Shield,
+      Spell::Drain,
+      Spell::Poison,
+      Spell::MagicMissile
+    ]
   )
 end
 

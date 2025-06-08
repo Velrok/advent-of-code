@@ -20,7 +20,7 @@ pub fn main() {
   let matches = regexp.scan(re, input)
   let nodes = matches |> list.map(node_from_match)
 
-  echo part1(nodes)
+  // echo part1(nodes)
   echo part2(nodes)
 }
 
@@ -51,7 +51,7 @@ fn extract_people(nodes: List(Node)) {
 
 fn score(nodes: List(Node), seating_arrangement: List(String)) -> Int {
   seating_arrangement
-  |> list.index_map(fn(person, index) {
+  |> list.index_map(fn(_person, index) {
     let left = at(seating_arrangement, index - 1)
     let person = at(seating_arrangement, index)
     let right = at(seating_arrangement, index + 1)

@@ -2,9 +2,9 @@ import gleam/int
 import gleam/list
 
 // import gleam/result
-import gleam/string.{
-  from_utf_codepoints, inspect, to_utf_codepoints, utf_codepoint,
-}
+import gleam/string.{to_utf_codepoints}
+
+// utf_codepoint,
 import utils
 
 fn length_diff(line: String) -> Int {
@@ -35,11 +35,11 @@ pub fn part1() {
 }
 
 pub fn part2() {
-  todo
+  panic
 }
 
 fn codepoints() -> List(UtfCodepoint) {
-  todo
+  panic
   // let extras =
   //   "\"\\"
   //   |> to_utf_codepoints

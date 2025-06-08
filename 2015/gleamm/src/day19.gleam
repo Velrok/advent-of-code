@@ -4,7 +4,8 @@ import gleam/option.{Some}
 import gleam/regexp
 import gleam/result
 import gleam/string
-import simplifile
+
+// import simplifile
 
 type Substibutions =
   dict.Dict(String, List(String))
@@ -25,9 +26,9 @@ pub fn splits(content: String, sep: String) {
 }
 
 pub fn main() {
-  let assert Ok(input) = simplifile.read("./inputs/day19.example")
+  // let assert Ok(input) = simplifile.read("./inputs/day19.example")
   // TODO: also parse the actual string to operate on (last line)
-  let subs = parse(input)
+  // let subs = parse(input)
   // part01()
   // for each substibution run this and collect all the results into a set
   echo splits("HOH", "H")
@@ -39,7 +40,7 @@ pub fn main() {
   // then we can just return the size of the set
 }
 
-fn parse(input: String) -> Substibutions {
+pub fn parse(input: String) -> Substibutions {
   let assert Ok(re) = regexp.from_string("(\\w+) => (\\w+)")
   regexp.scan(re, input)
   |> list.map(fn(match) {

@@ -12,7 +12,7 @@ pub fn main() {
   part02()
 }
 
-fn part01() {
+pub fn part01() {
   // utils.lines("./inputs/day14.example")
   utils.lines("./inputs/day14")
   |> list.map(reindeer_from_string)

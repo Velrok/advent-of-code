@@ -49,7 +49,7 @@ pub fn interpret_results(result: List(regexp.Match)) -> Instruction {
 }
 
 fn part1() {
-  todo
+  panic as "not migrated"
   // let assert Ok(pattern) =
   //   regexp.from_string(
   //     "(turn on|turn off|toggle) (\\d+),(\\d+) through (\\d+),(\\d+)",
