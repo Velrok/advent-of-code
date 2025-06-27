@@ -1,5 +1,4 @@
 import gleam/dict
-import gleam/function
 import gleam/int
 import gleam/io.{debug}
 import gleam/list
@@ -34,9 +33,11 @@ fn p2() {
   |> list.transpose
   |> list.map(utils.frequencies)
   |> list.map(dict.to_list)
-  |> list.map(list.sort(_, by: fn(p1, p2) {
-    int.compare(pair.second(p1), pair.second(p2))
-  }))
+  |> list.map(
+    list.sort(_, by: fn(p1, p2) {
+      int.compare(pair.second(p1), pair.second(p2))
+    }),
+  )
   |> list.map(fn(x) {
     case list.first(x) {
       Ok(i) -> i
