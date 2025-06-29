@@ -67,8 +67,13 @@ fn part02(instructions: List(Instruction)) -> String {
       case list.contains(hist, #(pos.x, pos.y)) {
         True -> #(pos, hist)
         False -> {
-          let new_hist = [#(pos.x, pos.y), ..hist]
           echo #(pos, instr)
+
+          let dist = case instr {
+            L(x) -> x
+            R(x) -> x
+          }
+
           let new_direction = case instr {
             L(_) ->
               case pos.direction {
@@ -85,26 +90,39 @@ fn part02(instructions: List(Instruction)) -> String {
                 West -> North
               }
           }
-          let dist = case instr {
-            L(x) -> x
-            R(x) -> x
-          }
+
           case new_direction {
             East -> #(
               Position(new_direction, x: pos.x + dist, y: pos.y),
-              new_hist,
+              list.append(
+                hist,
+                list.range(pos.x, pos.x + dist)
+                  |> list.map(fn(x) { #(x, pos.y) }),
+              ),
             )
             West -> #(
               Position(new_direction, x: pos.x - dist, y: pos.y),
-              new_hist,
+              list.append(
+                hist,
+                list.range(pos.x, pos.x - dist)
+                  |> list.map(fn(x) { #(x, pos.y) }),
+              ),
             )
             North -> #(
               Position(new_direction, x: pos.x, y: pos.y + dist),
-              new_hist,
+              list.append(
+                hist,
+                list.range(pos.y, pos.y + dist)
+                  |> list.map(fn(y) { #(pos.x, y) }),
+              ),
             )
             South -> #(
               Position(new_direction, x: pos.x, y: pos.y - dist),
-              new_hist,
+              list.append(
+                hist,
+                list.range(pos.y, pos.y - dist)
+                  |> list.map(fn(y) { #(pos.x, y) }),
+              ),
             )
           }
         }
