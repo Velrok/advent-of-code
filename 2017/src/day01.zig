@@ -1,9 +1,31 @@
 pub fn main() !void {
     // const file_path = "inputs/"
+    // read file content
+    // strip new lines and parse digits into ArrayList
     print("hello", .{});
 }
 
-// fn part01(input: []const u8) !u32 {}
+fn part01(numbers: []const u8) u32 {
+    // start sum with 0
+    // for char c_i in list:
+    //   if c_i == c_i+1: add c_1 to sum
+    // finally return sum
+    var sum: u32 = 0;
+    for (numbers, 0..) |n, i| {
+        const next_idx = (i + 1) % numbers.len;
+        if (n == numbers[next_idx]) {
+            sum += n;
+        }
+    }
+    return sum;
+}
+
+test "part01 examples" {
+    try testing.expectEqual(3, part01(&.{ 1, 1, 2, 2 }));
+    try testing.expectEqual(4, part01(&.{ 1, 1, 1, 1 }));
+    try testing.expectEqual(0, part01(&.{ 1, 2, 3, 4 }));
+    try testing.expectEqual(9, part01(&.{ 9, 1, 2, 1, 2, 1, 2, 9 }));
+}
 
 const ParseErrors = error{NaN};
 
