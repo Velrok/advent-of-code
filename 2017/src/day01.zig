@@ -1,8 +1,21 @@
 pub fn main() !void {
-    // const file_path = "inputs/"
+    const file_path = "inputs/day01";
+    const file = try std.fs.cwd().openFile(file_path, .{});
+
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const content = try file.readToEndAlloc(allocator, 1024 * 10);
+
+    const numbers = try parseInput(allocator, std.mem.trim(u8, content, " \n"));
+    print("part 1: {any}", .{part01(
+        numbers.items,
+    )});
+
     // read file content
     // strip new lines and parse digits into ArrayList
-    print("hello", .{});
+    // print("hello", .{});
 }
 
 fn part01(numbers: []const u8) u32 {
@@ -30,6 +43,7 @@ test "part01 examples" {
 const ParseErrors = error{NaN};
 
 /// Parses string char by char. Returns an ArrayList the consumer owns and needs to deinit.
+/// Ignores new lines.
 fn parseInput(allocator: std.mem.Allocator, input: []const u8) !std.ArrayList(u8) {
     var result = std.ArrayList(u8).init(allocator);
     errdefer result.deinit();
