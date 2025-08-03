@@ -9,15 +9,26 @@ pub fn main() !void {
     const content = try file.readToEndAlloc(allocator, 1024 * 10);
 
     const numbers = try parseInput(allocator, std.mem.trim(u8, content, " \n"));
-    print("part 1: {any}", .{part01(
+    print("part 1: {any}\n", .{part01(
+        numbers.items,
+    )});
+    print("part 2: {any}\n", .{part02(
         numbers.items,
     )});
 }
 
 fn part01(numbers: []const u8) u32 {
+    return captcha(numbers, 1);
+}
+
+fn part02(numbers: []const u8) u32 {
+    return captcha(numbers, numbers.len / 2);
+}
+
+fn captcha(numbers: []const u8, look_ahead: usize) u32 {
     var sum: u32 = 0;
     for (numbers, 0..) |n, i| {
-        const next_idx = (i + 1) % numbers.len;
+        const next_idx = (i + look_ahead) % numbers.len;
         if (n == numbers[next_idx]) {
             sum += n;
         }
