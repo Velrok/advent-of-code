@@ -12,17 +12,9 @@ pub fn main() !void {
     print("part 1: {any}", .{part01(
         numbers.items,
     )});
-
-    // read file content
-    // strip new lines and parse digits into ArrayList
-    // print("hello", .{});
 }
 
 fn part01(numbers: []const u8) u32 {
-    // start sum with 0
-    // for char c_i in list:
-    //   if c_i == c_i+1: add c_1 to sum
-    // finally return sum
     var sum: u32 = 0;
     for (numbers, 0..) |n, i| {
         const next_idx = (i + 1) % numbers.len;
@@ -72,7 +64,6 @@ test parseInput {
 
 test "parseInput errors if string contains none digits" {
     const result = parseInput(std.testing.allocator, "123A4567890");
-    // defer result.deinit();
     try testing.expectError(ParseErrors.NaN, result);
 }
 
