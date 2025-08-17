@@ -22,7 +22,7 @@ pub fn main() {
   // they are pre sorted by we want largest first
 
   let total_weight = weight_packages(packages)
-  let target_weight = total_weight / 3
+  let target_weight = total_weight / 4
   let best_fit =
     find_valid_combinations(target_weight, packages, 2)
     |> list.sort(quantum_entangement_order)
