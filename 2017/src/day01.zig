@@ -9,6 +9,8 @@ pub fn main() !void {
     const content = try file.readToEndAlloc(allocator, 1024 * 10);
 
     const numbers = try utils.parseDigits(allocator, std.mem.trim(u8, content, " \n"));
+    defer numbers.deinit();
+
     print("part 1: {any}\n", .{part01(
         numbers.items,
     )});
@@ -27,6 +29,7 @@ fn part02(numbers: []const u8) u32 {
 
 fn captcha(numbers: []const u8, look_ahead: usize) u32 {
     var sum: u32 = 0;
+    // for (numbers) |n| {
     for (numbers, 0..) |n, i| {
         const next_idx = (i + look_ahead) % numbers.len;
         if (n == numbers[next_idx]) {
