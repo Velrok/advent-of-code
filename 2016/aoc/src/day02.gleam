@@ -18,23 +18,6 @@ pub fn main() {
   |> echo
 }
 
-fn part01(input) {
-  input
-  |> list.fold(#(#(0, 0), ""), fn(state, coords) {
-    let #(pos, code) = state
-    let next_pos =
-      list.fold(coords, pos, fn(pos, delta) {
-        let #(x, y) = pos
-        let #(dx, dy) = delta
-
-        #(
-          int.clamp(x + dx, min: -1, max: 1),
-          int.clamp(y + dy, min: -1, max: 1),
-        )
-      })
-    #(next_pos, code <> pos_to_number(next_pos))
-  })
-}
 
 fn part02(input) {
   input
@@ -70,20 +53,6 @@ fn part02(input) {
   })
 }
 
-fn pos_to_number(pos: #(Int, Int)) -> String {
-  case pos {
-    #(-1, -1) -> "1"
-    #(0, -1) -> "2"
-    #(1, -1) -> "3"
-    #(-1, 0) -> "4"
-    #(0, 0) -> "5"
-    #(1, 0) -> "6"
-    #(-1, 1) -> "7"
-    #(0, 1) -> "8"
-    #(1, 1) -> "9"
-    _ -> panic as "invalid keypad position"
-  }
-}
 
 fn pos_to_number_2(pos: #(Int, Int)) -> String {
   case pos {

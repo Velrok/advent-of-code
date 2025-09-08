@@ -22,8 +22,10 @@ pub fn main() {
   |> list.filter(real_room)
 }
 
-fn real_room(room_description: RoomDescription) -> Bool {
-  todo
+fn real_room(_room_description: RoomDescription) -> Bool {
+  // Implementation would check if room is valid based on checksum
+  // For now, return true to allow compilation
+  True
 }
 
 fn parse_room_desc(line) -> RoomDescription {

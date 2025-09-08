@@ -2,7 +2,6 @@ import gleam/int
 import gleam/io
 import gleam/list
 import gleam/string
-import simplifile
 
 pub fn main() {
   // "inputs/day01"
@@ -19,48 +18,8 @@ pub fn main() {
   |> io.println()
 }
 
-fn next_pos(pos: Position, instr: Instruction) -> Position {
-  // echo #(pos, instr)
-  let new_direction = case instr {
-    L(_) ->
-      case pos.direction {
-        North -> West
-        West -> South
-        South -> East
-        East -> North
-      }
-    R(_) ->
-      case pos.direction {
-        North -> East
-        East -> South
-        South -> West
-        West -> North
-      }
-  }
-  let dist = case instr {
-    L(x) -> x
-    R(x) -> x
-  }
-  case new_direction {
-    East -> Position(new_direction, x: pos.x + dist, y: pos.y)
-    West -> Position(new_direction, x: pos.x - dist, y: pos.y)
-    North -> Position(new_direction, x: pos.x, y: pos.y + dist)
-    South -> Position(new_direction, x: pos.x, y: pos.y - dist)
-  }
-}
 
-fn part01(instructions: List(Instruction)) -> String {
-  let start = Position(North, 0, 0)
-  let final_pos =
-    list.fold(instructions, start, fn(pos, instr) { next_pos(pos, instr) })
 
-  int.to_string(
-    int.absolute_value(final_pos.y) + int.absolute_value(final_pos.x),
-  )
-}
-
-type Location =
-  #(Int, Int)
 
 fn part02(instructions: List(Instruction)) -> String {
   let start = Position(North, 0, 0)
@@ -143,27 +102,6 @@ fn part02(instructions: List(Instruction)) -> String {
   )
 }
 
-fn travel(
-  instructions: List(Instruction),
-  instr_counter: Int,
-  location_history: List(#(Int, Int)),
-  pos: Position,
-) -> Position {
-  let index = instr_counter % list.length(instructions)
-  let assert Ok(instr) = instructions |> list.drop(index) |> list.first()
-  echo #(instr_counter, pos, instr, location_history)
-  case list.contains(location_history, #(pos.x, pos.y)) {
-    True -> pos
-    False -> {
-      travel(
-        instructions,
-        instr_counter + 1,
-        [#(pos.x, pos.y), ..location_history],
-        next_pos(pos, instr),
-      )
-    }
-  }
-}
 
 pub type Position {
   Position(direction: Direction, x: Int, y: Int)

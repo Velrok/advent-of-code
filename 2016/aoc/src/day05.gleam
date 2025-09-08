@@ -17,41 +17,7 @@ fn part02(door_id: String) -> String {
   |> string.concat()
 }
 
-fn part01(door_id: String) -> String {
-  hack_door_1(door_id, 0, [])
-  |> string.concat()
-}
 
-fn hack_door_1(
-  door_id: String,
-  idx: Int,
-  password: List(String),
-) -> List(String) {
-  let hash =
-    crypto.hash(
-      crypto.Md5,
-      bit_array.from_string(door_id <> int.to_string(idx)),
-    )
-    |> bit_array.base16_encode
-  let is_interesting = string.starts_with(hash, "00000")
-  case is_interesting {
-    False -> hack_door_1(door_id, idx + 1, password)
-    True -> {
-      let pw =
-        password
-        |> list.append([
-          hash
-          |> string.slice(at_index: 5, length: 1),
-        ])
-      echo pw
-      let is_complete = list.length(pw) == 8
-      case is_complete {
-        False -> hack_door_1(door_id, idx + 1, pw)
-        True -> pw
-      }
-    }
-  }
-}
 
 fn hack_door_2(
   door_id: String,
