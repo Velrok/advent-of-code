@@ -10,6 +10,7 @@ import gleam/string
 import simplifile
 
 pub fn main() {
+  let a = 2
   let packages =
     result.lazy_unwrap(simplifile.read(from: "./input/day24"), fn() {
       panic as "cant read input file"
