@@ -10,7 +10,7 @@ public struct Point: Hashable, Equatable {
     }
 }
 
-public struct Claim {
+public struct Claim: Hashable {
     public let id: Int
     public let x: Int
     public let y: Int
@@ -103,6 +103,25 @@ func part01() {
     dump(overlapingPoints)
 }
 
+func part02() {
+    print("part02")
+
+    let content = try! String(contentsOfFile: "input/day03")
+    let lines = content.split(separator: "\n")
+
+    let claims = lines.map { parseClaim(line: $0) }
+    var claimsWithoutOverlap = Set(claims)
+
+    for c1 in claims {
+        for c2 in claims {
+            if !overlap(c1, c2).isEmpty {
+                claimsWithoutOverlap.remove(c1)
+            }
+        }
+    }
+    dump(claimsWithoutOverlap)
+}
+
 print("Start")
-part01()
+part02()
 print("Done")
