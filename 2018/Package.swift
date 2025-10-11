@@ -5,10 +5,17 @@ import PackageDescription
 
 let package = Package(
     name: "aoc",
+    platforms: [.macOS(.v13)],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .executableTarget(name: "day01"),
         .executableTarget(name: "day02"),
+        .executableTarget(name: "day03"),
+
+        .testTarget(
+            name: "day03Tests",
+            dependencies: ["day03"]
+        ),
     ]
 )
