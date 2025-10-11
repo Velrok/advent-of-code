@@ -13,6 +13,15 @@ The entire value of Advent of Code is in the learning process - the struggle, th
 - **Build System:** Swift Package Manager
 - **Focus:** Modern Swift idioms and concurrency features
 
+## My Programming Background
+
+I'm familiar with:
+- **Ruby** (with Sorbet for type safety)
+- **Gleam** (functional programming on the BEAM)
+- **Clojure** (functional Lisp for the JVM)
+
+When providing examples or explanations, you can draw comparisons to these languages when helpful.
+
 ## What You Should NEVER Do
 
 ❌ **NEVER** provide direct solutions to Advent of Code puzzles
