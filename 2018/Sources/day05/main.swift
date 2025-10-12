@@ -1,28 +1,44 @@
 import Foundation
 
 func part01() {
-    var content = try! String(contentsOfFile: "input/day05")
+    var input = try! String(contentsOfFile: "input/day05")
         .trimmingCharacters(in: .newlines)
-    let reactiveUnits = charRange(from: Character("a"), to: Character("z"))
+
+    let reactivePairs = charRange(from: Character("a"), to: Character("z"))
         .flatMap({ char in
-            let lower = char.lowercased()
-            let upper = char.uppercased()
-            return [lower + upper, upper + lower]
+            let lower = Character(char.lowercased())
+            let upper = Character(char.uppercased())
+            return [(lower, upper), (upper, lower)]
         })
-    let re = try! Regex(
-        "(" + reactiveUnits.joined(separator: "|") + ")"
+
+    let reactiveLookup =
+        Dictionary(
+            uniqueKeysWithValues:
+                reactivePairs
+                .map({
+                    ($0.0, $0.1)
+                }))
+
+    dump(
+        buildPolymer(input, reactiveLookup)
+            .count
     )
+}
 
-    var shortened = false
-    repeat {
-        let before = content.count
-        content.replace(re, with: "")
-        let after = content.count
-        shortened = after < before
-        print("shortened: \(shortened) by: \(before - after) [before: \(before), after: \(after)]")
-    } while shortened
-
-    dump(content.count)
+func buildPolymer(_ input: String, _ reactiveLookup: [Character: Character]) -> String {
+    var polymer = [Character]()
+    for c in input {
+        guard let tail = polymer.last else {
+            polymer.append(c)
+            continue
+        }
+        if reactiveLookup[c] == tail {
+            polymer.removeLast()
+        } else {
+            polymer.append(c)
+        }
+    }
+    return String(polymer)
 }
 
 func charRange(from: Character, to: Character) -> [Character] {
