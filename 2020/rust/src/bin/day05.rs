@@ -82,7 +82,7 @@ fn part2(i: &str) {
 fn main() {
     // TODO: implement FromStr trait
     // let my_seat:Seat = "BBFFBBFRLL".parse::<Seat>();
-    let input = include_str!("../input");
+    let input = include_str!("../../inputs/day05.txt");
     part1(input);
     part2(input);
 }

@@ -1,7 +1,7 @@
 use rayon::prelude::*;
 
 fn main() {
-    let input = include_str!("../input");
+    let input = include_str!("../../inputs/day13.txt");
     // print!("part1 -> {}", part1(input));
     println!("part2 -> {}", part2(input, 100000000000000..std::i64::MAX));
 }

@@ -170,7 +170,7 @@ fn part1(program: &Program) {
 
 fn main() {
     // testing();
-    let input = include_str!("../input");
+    let input = include_str!("../../inputs/day08.txt");
     let instructions: Vec<_> = input
         .lines()
         .map(|l| l.parse::<Instruction>().unwrap())

@@ -1,5 +1,5 @@
 fn main() {
-    let input = include_str!("../input");
+    let input = include_str!("../../inputs/day12.txt");
     println!("part1 -> {}", part1(input));
 }
 

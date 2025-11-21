@@ -107,7 +107,7 @@ fn main() {
     // summ all tuples into a vec -> check_sum
     // check that check_sum contains numbers[n]
     // if not print && exit
-    let input = include_str!("../input");
+    let input = include_str!("../../inputs/day09.txt");
     let numbers = parse_numbers(input);
 
     println!("part 1 -> {}", part1(&numbers, 25)); // -> 144381670

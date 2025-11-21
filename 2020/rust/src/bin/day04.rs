@@ -93,7 +93,7 @@ fn count_valid_pass_2 (i: &str) -> usize {
 }
 
 fn main() {
-    let input = include_str!("../input");
+    let input = include_str!("../../inputs/day04.txt");
     println!("part 1");
     println!("No of valid passports: {}", count_valid_pass(input));
     println!("part 2");

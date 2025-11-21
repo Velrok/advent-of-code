@@ -46,12 +46,12 @@ impl Line<'_> {
 }
 
 fn part1() {
-    let input = fs::read_to_string("input").unwrap();
+    let input = fs::read_to_string("inputs/day02.txt").unwrap();
     let lines_count = input.lines().count();
 
     // I'm doing this again, because count() does not implemnet copy and moves the iter
     // I'm sure there is better way of doing this, but this is what I can do atm.
-    let input = fs::read_to_string("input").unwrap();
+    let input = fs::read_to_string("inputs/day02.txt").unwrap();
     let lines = input.lines();
 
     // example input line
@@ -82,12 +82,12 @@ fn part1() {
 }
 
 fn part2() {
-    let input = fs::read_to_string("input").unwrap();
+    let input = fs::read_to_string("inputs/day02.txt").unwrap();
     let lines_count = input.lines().count();
 
     // I'm doing this again, because count() does not implemnet copy and moves the iter
     // I'm sure there is better way of doing this, but this is what I can do atm.
-    let input = fs::read_to_string("input").unwrap();
+    let input = fs::read_to_string("inputs/day02.txt").unwrap();
     let lines = input.lines();
 
     // example input line

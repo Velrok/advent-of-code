@@ -5,7 +5,7 @@ fn part1(input: &str) -> HashMap<usize, usize> {
 }
 
 fn main() {
-    let input = include_str!("../input");
+    let input = include_str!("../../inputs/day10.txt");
     println!("part1 -> {:#?}", part1(input));
 }
 

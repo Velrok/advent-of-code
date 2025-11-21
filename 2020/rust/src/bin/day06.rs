@@ -61,7 +61,7 @@ b";
 }
 
 fn main() {
-    let input = include_str!("../input");
+    let input = include_str!("../../inputs/day06.txt");
     //testing();
     println!("part 1 {:#?}", part1(input));
     println!("part 2 {:#?}", part2(input));

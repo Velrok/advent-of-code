@@ -1,4 +1,3 @@
-#![feature(split_inclusive)]
 use std::str::FromStr;
 use std::string::ParseError;
 use std::fmt;
@@ -168,7 +167,7 @@ fn part1(input: &str) {
 
 fn main() {
     println!("Day 7");
-    let input = include_str!("../input");
+    let input = include_str!("../../inputs/day07.txt");
     // testing();
     part1(input);
 }

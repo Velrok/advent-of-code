@@ -15,8 +15,8 @@ struct Slope {
 }
 
 fn main() {
-    // let input = fs::read_to_string("input").unwrap();
-    let input = include_str!("../input");
+    // let input = fs::read_to_string("inputs/day03.txt").unwrap();
+    let input = include_str!("../../inputs/day03.txt");
     println!("part 1: {}", traverse_field(input, Slope {dx: 3, dy: 1}));
     println!("part 2: {}",
         traverse_field(input, Slope{dx: 1, dy: 1})
