@@ -57,8 +57,8 @@ fn part2() {
         let rotation = chars.collect::<String>().parse::<DialCount>().unwrap();
 
         let (new_pos, full_rotations) = match direction {
-            Some('L') => turn_left_2(dial_pos, rotation),
-            Some('R') => turn_right_2(dial_pos, rotation),
+            Some('L') => turn_left_p2(dial_pos, rotation),
+            Some('R') => turn_right_p2(dial_pos, rotation),
             _ => panic!("unexpected direction"),
         };
 
@@ -69,7 +69,7 @@ fn part2() {
     println!("P2: {password}")
 }
 
-fn turn_left_2(dial_pos: DialCount, rotation: DialCount) -> (DialCount, DialCount) {
+fn turn_left_p2(dial_pos: DialCount, rotation: DialCount) -> (DialCount, DialCount) {
     let new_pos = dial_pos - rotation;
     (
         new_pos.rem_euclid(DIAL_SIZE),
@@ -77,7 +77,7 @@ fn turn_left_2(dial_pos: DialCount, rotation: DialCount) -> (DialCount, DialCoun
     )
 }
 
-fn turn_right_2(dial_pos: DialCount, rotation: DialCount) -> (DialCount, DialCount) {
+fn turn_right_p2(dial_pos: DialCount, rotation: DialCount) -> (DialCount, DialCount) {
     let new_pos = dial_pos + rotation;
     (
         new_pos.rem_euclid(DIAL_SIZE),
