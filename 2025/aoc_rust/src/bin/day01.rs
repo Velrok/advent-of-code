@@ -87,7 +87,6 @@ fn turn_right_2(dial_pos: DialCount, rotation: DialCount) -> (DialCount, DialCou
 
 fn pass_0_rotations(old_pos: DialCount, new_pos: DialCount) -> DialCount {
     let full_rotations = (new_pos / DIAL_SIZE).abs();
-    // if true inversion signum -> -1 0 1
     let sign_change = if old_pos.signum() != 0 && new_pos.signum() != old_pos.signum() {
         1
     } else {
