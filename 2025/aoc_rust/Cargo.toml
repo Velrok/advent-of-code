@@ -1,0 +1,11 @@
+[package]
+name = "aoc2025"
+version = "0.1.0"
+authors = ["Waldemar <waldemar.schwan@uswitch.com>"]
+edition = "2021"
+
+[dependencies]
+
+[[bin]]
+name = "day01"
+path = "src/bin/day01.rs"
