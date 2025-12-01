@@ -71,27 +71,51 @@ fn part2() {
 
 fn turn_left_2(dial_pos: DialCount, rotation: DialCount) -> (DialCount, DialCount) {
     let new_pos = dial_pos - rotation;
-    (new_pos % DIAL_SIZE, full_rotations(dial_pos, new_pos))
+    (
+        new_pos.rem_euclid(DIAL_SIZE),
+        pass_0_rotations(dial_pos, new_pos),
+    )
 }
 
 fn turn_right_2(dial_pos: DialCount, rotation: DialCount) -> (DialCount, DialCount) {
     let new_pos = dial_pos + rotation;
-    (new_pos % DIAL_SIZE, full_rotations(dial_pos, new_pos))
+    (
+        new_pos.rem_euclid(DIAL_SIZE),
+        pass_0_rotations(dial_pos, new_pos),
+    )
 }
 
-fn full_rotations(old_pos: DialCount, new_pos: DialCount) -> DialCount {
-    (new_pos / DIAL_SIZE).abs()
-        + if old_pos.signum() != new_pos.signum() {
-            1
-        } else {
-            0
-        }
-}
+fn pass_0_rotations(old_pos: DialCount, new_pos: DialCount) -> DialCount {
+    let full_rotations = (new_pos / DIAL_SIZE).abs();
+    // if true inversion signum -> -1 0 1
+    let sign_change = if old_pos.signum() != 0 && new_pos.signum() != old_pos.signum() {
+        1
+    } else {
+        0
+    };
 
+    full_rotations + sign_change
+}
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_full_rotations() {}
+    fn test_pass_0_rotations() {
+        assert_eq!(pass_0_rotations(0, 50), 0);
+        assert_eq!(pass_0_rotations(0, -50), 0);
+        assert_eq!(pass_0_rotations(50, 0), 1);
+        assert_eq!(pass_0_rotations(50, 1), 0);
+        assert_eq!(pass_0_rotations(50, 50 + 50), 1);
+        assert_eq!(pass_0_rotations(50, 50 - 50), 1);
+        assert_eq!(pass_0_rotations(50, 50 + 100), 1);
+        assert_eq!(pass_0_rotations(50, 50 - 100), 1);
+        assert_eq!(pass_0_rotations(50, 50 + 200), 2);
+        assert_eq!(pass_0_rotations(50, 50 - 200), 2);
+        // assert_eq!(full_rotations(50, -1), 1);
+        // assert_eq!(full_rotations(0, 99), 0);
+        // assert_eq!(full_rotations(0, -99), 1);
+        // assert_eq!(full_rotations(0, 200), 2);
+        // assert_eq!(full_rotations(1, 200), 3);
+    }
 }
