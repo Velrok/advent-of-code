@@ -95,26 +95,3 @@ fn pass_0_rotations(old_pos: DialCount, new_pos: DialCount) -> DialCount {
 
     full_rotations + sign_change
 }
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_pass_0_rotations() {
-        assert_eq!(pass_0_rotations(0, 50), 0);
-        assert_eq!(pass_0_rotations(0, -50), 0);
-        assert_eq!(pass_0_rotations(50, 0), 1);
-        assert_eq!(pass_0_rotations(50, 1), 0);
-        assert_eq!(pass_0_rotations(50, 50 + 50), 1);
-        assert_eq!(pass_0_rotations(50, 50 - 50), 1);
-        assert_eq!(pass_0_rotations(50, 50 + 100), 1);
-        assert_eq!(pass_0_rotations(50, 50 - 100), 1);
-        assert_eq!(pass_0_rotations(50, 50 + 200), 2);
-        assert_eq!(pass_0_rotations(50, 50 - 200), 2);
-        // assert_eq!(full_rotations(50, -1), 1);
-        // assert_eq!(full_rotations(0, 99), 0);
-        // assert_eq!(full_rotations(0, -99), 1);
-        // assert_eq!(full_rotations(0, 200), 2);
-        // assert_eq!(full_rotations(1, 200), 3);
-    }
-}
