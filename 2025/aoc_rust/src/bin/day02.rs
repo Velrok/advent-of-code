@@ -1,5 +1,10 @@
 use std::fs;
 fn main() {
+    let p1_answer = invalid_sum(is_invalid_p1);
+    println!("P1: {p1_answer:?}");
+}
+
+fn invalid_sum(invalid_fn: fn(u64) -> bool) -> u64 {
     let input = fs::read_to_string("inputs/day02.txt").unwrap();
     let ranges = input
         .trim()
@@ -10,15 +15,15 @@ fn main() {
     let mut invalid_id_sum = 0;
     for range in ranges {
         for id in range {
-            if is_invalid(id) {
+            if invalid_fn(id) {
                 invalid_id_sum += id;
             }
         }
     }
-    println!("P1: {invalid_id_sum:?}")
+    invalid_id_sum
 }
 
-fn is_invalid(id: u64) -> bool {
+fn is_invalid_p1(id: u64) -> bool {
     let id_s = id.to_string();
     let chars: Vec<char> = id_s.chars().collect();
     let chars_count = chars.len();
@@ -48,18 +53,18 @@ mod tests {
 
     #[test]
     fn test_is_invalid() {
-        assert_eq!(true, is_invalid(123123));
-        assert_eq!(true, is_invalid(11));
-        assert_eq!(true, is_invalid(22));
-        assert_eq!(true, is_invalid(99));
-        assert_eq!(true, is_invalid(1010));
-        assert_eq!(true, is_invalid(1188511885));
-        assert_eq!(true, is_invalid(222222));
-        assert_eq!(true, is_invalid(446446));
-        assert_eq!(true, is_invalid(38593859));
+        assert_eq!(true, is_invalid_p1(123123));
+        assert_eq!(true, is_invalid_p1(11));
+        assert_eq!(true, is_invalid_p1(22));
+        assert_eq!(true, is_invalid_p1(99));
+        assert_eq!(true, is_invalid_p1(1010));
+        assert_eq!(true, is_invalid_p1(1188511885));
+        assert_eq!(true, is_invalid_p1(222222));
+        assert_eq!(true, is_invalid_p1(446446));
+        assert_eq!(true, is_invalid_p1(38593859));
 
-        assert_eq!(false, is_invalid(1));
-        assert_eq!(false, is_invalid(111));
+        assert_eq!(false, is_invalid_p1(1));
+        assert_eq!(false, is_invalid_p1(111));
     }
 }
 
