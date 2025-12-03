@@ -6,21 +6,12 @@ fn main() {
 
 fn invalid_sum(invalid_fn: fn(u64) -> bool) -> u64 {
     let input = fs::read_to_string("inputs/day02.txt").unwrap();
-    let ranges = input
+    input
         .trim()
         .split_terminator(',')
         .map(parse_range)
-        .collect::<Vec<_>>();
-
-    let mut invalid_id_sum = 0;
-    for range in ranges {
-        for id in range {
-            if invalid_fn(id) {
-                invalid_id_sum += id;
-            }
-        }
-    }
-    invalid_id_sum
+        .flat_map(|range| range.filter(|&id| invalid_fn(id)))
+        .sum()
 }
 
 fn is_invalid_p1(id: u64) -> bool {
