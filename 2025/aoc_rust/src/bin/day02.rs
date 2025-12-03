@@ -44,18 +44,18 @@ mod tests {
 
     #[test]
     fn test_is_invalid() {
-        assert_eq!(true, is_invalid_p1(123123));
-        assert_eq!(true, is_invalid_p1(11));
-        assert_eq!(true, is_invalid_p1(22));
-        assert_eq!(true, is_invalid_p1(99));
-        assert_eq!(true, is_invalid_p1(1010));
-        assert_eq!(true, is_invalid_p1(1188511885));
-        assert_eq!(true, is_invalid_p1(222222));
-        assert_eq!(true, is_invalid_p1(446446));
-        assert_eq!(true, is_invalid_p1(38593859));
+        assert!(is_invalid_p1(123123));
+        assert!(is_invalid_p1(11));
+        assert!(is_invalid_p1(22));
+        assert!(is_invalid_p1(99));
+        assert!(is_invalid_p1(1010));
+        assert!(is_invalid_p1(1188511885));
+        assert!(is_invalid_p1(222222));
+        assert!(is_invalid_p1(446446));
+        assert!(is_invalid_p1(38593859));
 
-        assert_eq!(false, is_invalid_p1(1));
-        assert_eq!(false, is_invalid_p1(111));
+        assert!(!is_invalid_p1(1));
+        assert!(!is_invalid_p1(111));
     }
 }
 
