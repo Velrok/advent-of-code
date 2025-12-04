@@ -1,4 +1,5 @@
 use std::fs;
+
 fn main() {
     let p1_answer = invalid_sum(is_invalid_p1);
     println!("P1: {p1_answer:?}");
