@@ -3,6 +3,7 @@ import gleam/list
 import gleam/result
 import gleam/string
 import simplifile
+import utils.{panic_on_error}
 
 type Range {
   Range(from: Int, to: Int)
@@ -83,10 +84,6 @@ fn parse_range(str: String) -> Range {
     from: int.parse(left) |> panic_on_error("left is not an int: " <> left),
     to: int.parse(right) |> panic_on_error("right in not an int:" <> right),
   )
-}
-
-fn panic_on_error(result: Result(a, b), msg: String) -> a {
-  result.lazy_unwrap(result, fn() { panic as msg })
 }
 
 fn includes(range: Range, number: Int) -> Bool {
