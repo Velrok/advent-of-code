@@ -19,8 +19,8 @@
         y1 (:y p1)
         y2 (:y p2)
 
-        width (Math/abs (- x2 x1))
-        height (Math/abs (- y2 y1))]
+        width (inc (Math/abs (- x2 x1)))
+        height (inc (Math/abs (- y2 y1)))]
     (* width height)))
 
 (defn main
