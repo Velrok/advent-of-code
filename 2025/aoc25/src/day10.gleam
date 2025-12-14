@@ -36,34 +36,38 @@ pub fn main() {
 }
 
 fn machine_from_string(line) -> Machine {
-  // [.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}
-  let assert Ok(#(lights_diagram, rest)) = string.split_once(line, " ")
-  let lights = parse_lights(lights_diagram)
-  let buttons = parse_buttons(rest)
+  let tokens = line |> string.split(" ")
 
-  Machine(
-    lights_state: list.repeat(False, lights |> iv.length()) |> iv.from_list(),
-    lights_diagram: lights,
-    buttons: buttons,
-  )
-}
+  let machine = {
+    use machine, token <- list.fold(
+      tokens,
+      Machine(lights_diagram: iv.new(), lights_state: iv.new(), buttons: []),
+    )
 
-fn parse_buttons(line: String) -> List(Button) {
-  // line = (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}
-  let re =
-    regexp.from_string("\\(([\\d,]*)\\)") |> panic_on_error("invalid regexp")
+    case string.first(token) {
+      Ok("[") -> Machine(..machine, lights_diagram: parse_lights(token))
+      Ok("(") ->
+        Machine(..machine, buttons: [parse_button(token), ..machine.buttons])
+      Ok("{") -> machine
+      // ignore for Part1
+      _ -> {
+        let msg = "cant parse " <> token
+        panic as msg
+      }
+    }
+  }
 
-  regexp.scan(re, line)
-  |> list.map(fn(match) {
-    let assert [Some(indecies_str)] = match.submatches
-    indecies_str
-  })
-  |> list.map(parse_button)
+  let count = iv.length(machine.lights_diagram)
+  let lights_state = list.repeat(False, count) |> iv.from_list()
+
+  Machine(..machine, buttons: list.reverse(machine.buttons), lights_state:)
 }
 
 fn parse_button(str: String) -> Button {
   Button(
     indecies: str
+    // take out wrapping ()
+    |> string.slice(at_index: 1, length: string.length(str) - 2)
     |> string.split(",")
     |> list.map(int.parse)
     |> result.values(),
