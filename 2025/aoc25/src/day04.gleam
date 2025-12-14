@@ -35,6 +35,7 @@ fn adjacent_rolls_count(roll: Roll, width: Int, height: Int) -> Int {
   }
   |> list.flatten()
   |> list.filter(fn(v) { v != vec2.from_tuple(#(0, 0)) })
+  todo
 }
 
 fn parse_rolls(lines: List(String)) -> set.Set(Vec2(Int)) {
