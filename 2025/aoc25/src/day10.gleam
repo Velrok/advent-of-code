@@ -13,7 +13,11 @@ pub type Button {
 }
 
 pub type Machine {
-  Machine(lights: Array(Bool), buttons: List(Button))
+  Machine(
+    lights_diagram: Array(Bool),
+    lights_state: Array(Bool),
+    buttons: List(Button),
+  )
 }
 
 pub fn main() {
@@ -37,7 +41,11 @@ fn machine_from_string(line) -> Machine {
   let lights = parse_lights(lights_diagram)
   let buttons = parse_buttons(rest)
 
-  Machine(lights: lights, buttons: buttons)
+  Machine(
+    lights_state: list.repeat(False, lights |> iv.length()) |> iv.from_list(),
+    lights_diagram: lights,
+    buttons: buttons,
+  )
 }
 
 fn parse_buttons(line: String) -> List(Button) {
