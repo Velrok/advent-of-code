@@ -1,9 +1,9 @@
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
-import gleam/regexp
 import gleam/result
 import gleam/string
+import gleam/yielder
 import iv.{type Array}
 import simplifile
 import utils.{panic_on_error}
@@ -22,20 +22,56 @@ pub type Machine {
 
 pub fn main() {
   let input_file = "inputs/day10.example"
-  let _input =
+  let machines =
     simplifile.read(input_file)
     |> panic_on_error("Can't load " <> input_file)
     |> string.trim_end()
     |> string.split("\n")
-    |> list.map(machine_from_string)
+    |> list.map(parse_machine)
+
+  let min_button_presses =
+    machines
+    |> list.map(find_minimal_button_presses)
     |> echo
-  // ☑️TODO: update Machine type to have desired state and current state
-  // for all possible button seqences of length 1
-  // does it produce desired state -> done
-  // otherwise for all possible button seqences of length +1
 }
 
-fn machine_from_string(line) -> Machine {
+fn find_minimal_button_presses(machine: Machine) -> Int {
+  let button_combinations = repeating_permutations(machine.buttons)
+  button_combinations
+  |> yielder.take(10)
+  |> yielder.chunk(produces_light_diagram_match(machine, _))
+  |> yielder.take(2)
+  // [invalid_combinations, valid_combinations]
+  |> yielder.last()
+  // valid_combinations
+  |> panic_on_error("could not find valid combinations")
+  |> list.first()
+  // first valid_combination
+  |> panic_on_error("valid combinations is empty")
+  |> list.length()
+  // numbers ob buttons in the list that produces a stable state
+}
+
+fn produces_light_diagram_match(m: Machine, list: List(Button)) -> Bool {
+  let m2 = press_buttons(m, list)
+  m2.lights_state == m2.lights_diagram
+}
+
+fn press_buttons(m: Machine, buttons_seq: List(Button)) -> Machine {
+  use m, btn <- list.fold(buttons_seq, m)
+  let lights_state =
+    m.lights_state
+    |> iv.index_map(fn(is_on, index) {
+      case list.contains(btn.indecies, index) {
+        True -> !is_on
+        False -> is_on
+      }
+    })
+  Machine(..m, lights_state: lights_state)
+  // Machine(..m, lights_state:)
+}
+
+fn parse_machine(line) -> Machine {
   let tokens = line |> string.split(" ")
 
   let machine = {
@@ -86,4 +122,15 @@ fn parse_lights(lights_diagram) -> Array(Bool) {
   })
   |> option.values()
   |> iv.from_list()
+}
+
+fn repeating_permutations(l: List(a)) {
+  let numbers = yielder.iterate(1, int.add(1, _))
+  yielder.flat_map(numbers, fn(i) {
+    list.repeat(l, i)
+    |> list.flatten()
+    |> list.permutations()
+    |> list.unique()
+    |> yielder.from_list()
+  })
 }
