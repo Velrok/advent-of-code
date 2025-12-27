@@ -1,4 +1,3 @@
-import gleam/list
 import gleam/string
 import simplifile
 import utils.{panic_on_error}

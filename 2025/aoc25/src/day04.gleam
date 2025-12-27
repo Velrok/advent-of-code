@@ -20,14 +20,14 @@ pub fn main() {
     |> panic_on_error("file may not be empty")
     |> string.length()
 
-  let rolls =
+  let _rolls =
     lines
     |> parse_rolls
     |> set.to_list()
     |> list.count(fn(roll) { adjacent_rolls_count(roll, width, height) < 4 })
 }
 
-fn adjacent_rolls_count(roll: Roll, width: Int, height: Int) -> Int {
+fn adjacent_rolls_count(_roll: Roll, _width: Int, _height: Int) -> Int {
   {
     use dy <- list.map(list.range(-1, 1))
     use dx <- list.map(list.range(-1, 1))

@@ -29,7 +29,7 @@ pub fn main() {
     |> string.split("\n")
     |> list.map(parse_machine)
 
-  let min_button_presses =
+  let _min_button_presses =
     machines
     |> list.map(find_minimal_button_presses)
     |> echo
