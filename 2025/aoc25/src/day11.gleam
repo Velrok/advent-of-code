@@ -12,35 +12,17 @@ pub fn main() {
     |> string.trim_end()
     |> parse()
   // echo part1(["you"], 0, paths)
-  echo part2([], "svr", paths)
+  echo part2(["dac", "fft"], "svr", paths)
 }
 
 fn part2(
-  path_taken: List(String),
+  outstanding_required: List(String),
   current: String,
   paths: Dict(String, List(String)),
 ) -> Int {
-  case current {
-    "out" -> {
-      case
-        list.contains(path_taken, "dac") && list.contains(path_taken, "fft")
-      {
-        True -> 1
-        False -> 0
-      }
-    }
-    curr -> {
-      let connected = dict.get(paths, curr)
-      case connected {
-        Error(_) -> 0
-        Ok(connected) ->
-          connected
-          |> list.fold(0, fn(agg, next) {
-            agg + part2([curr, ..path_taken], next, paths)
-          })
-      }
-    }
-  }
+  // ☑️TODO: find valid paths from current to out
+  // valid paths are the ones where outstanding_required and up empty
+  todo
 }
 
 fn part1(backlog: List(String), out_counter, paths) {
