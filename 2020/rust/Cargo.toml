@@ -7,6 +7,7 @@ edition = "2018"
 [dependencies]
 regex = "1"
 rayon = "1"
+im = "15.1.0"
 
 [[bin]]
 name = "day01"
@@ -63,3 +64,7 @@ path = "src/bin/day13.rs"
 [[bin]]
 name = "day14"
 path = "src/bin/day14.rs"
+
+[[bin]]
+name = "day15"
+path = "src/bin/day15.rs"
