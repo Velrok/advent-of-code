@@ -13,8 +13,8 @@ fn parse_line(line: &str) -> Result<Instruction, String> {
     }
 }
 
-fn main() -> () {
-    let input = std::fs::read_to_string("./inputs/day14.txt")
+fn main() {
+    std::fs::read_to_string("./inputs/day14.txt")
         .expect("Failed to read ./inputs/day14.txt")
         .lines()
         .map(parse_line);
