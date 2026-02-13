@@ -1,44 +1,42 @@
-use std::collections::HashMap;
-
-// use im::vector;
-
 // --- Day 15: Rambunctious Recitation ---
 fn main() {
-    let mut exmaple_nubers = vec![0, 3, 6];
-    let mut puzzle_numbers = vec![9, 6, 0, 10, 18, 2];
+    let example_numbers = vec![0, 3, 6];
+    let puzzle_numbers = vec![9, 6, 0, 10, 18, 2];
     let mut numbers = puzzle_numbers;
-    // keep a HashMap of
-    let mut recitation: HashMap<_, _> = HashMap::new();
+    // let mut numbers = example_numbers.clone();
 
-    for (i, num) in numbers.iter().enumerate() {
-        recitation.insert(*num, (0, i + 1));
-    }
-
-    for i in numbers.len()..2022 {
-        let turn = i + 1;
-        let last_number_spoken = numbers.last().unwrap();
-        let age = match recitation.get(last_number_spoken) {
-            None => 0,
-            Some((turn1, turn2)) if *turn1 > 0 => turn2 - turn1,
-            Some(_) => 0,
+    // 0, 3, 6
+    // 0, 1, 2
+    //        , 3
+    for i in numbers.len()..2021 {
+        println!("Turn: {}", i + 1);
+        let needle = numbers[i - 1];
+        println!(" needle: {needle}");
+        let last_occurences: Vec<_> = numbers
+            .iter()
+            .enumerate() // get a hold of the original indecies as well
+            .rev() // we are going backwards
+            .filter(|(_, x)| **x == needle)
+            .take(2)
+            .map(|(index, _)| index)
+            .collect::<Vec<_>>();
+        println!(" last_occurences: {:?}", last_occurences.as_slice());
+        let age = match last_occurences.as_slice() {
+            [] => 0,
+            [_] => 0,
+            [b, a] => b - a,
+            _ => unreachable!(), // take 2 means no more than 2
         };
-
-        // println!("turn: {turn}, last_number_spoken: {last_number_spoken}, age: {age}",);
-
-        // remember as new last
+        println!(" age: {age}");
         numbers.push(age);
-
-        match recitation.get(&age) {
-            None => recitation.insert(age, (0, turn)),
-            Some((_, t2)) => recitation.insert(age, (*t2, turn)),
-        };
     }
-    if numbers == exmaple_nubers {
+
+    if numbers == example_numbers {
         assert_eq!(
             numbers.iter().copied().take(10).collect::<Vec<usize>>(),
             vec![0, 3, 6, 0, 3, 3, 1, 0, 4, 0]
         );
     }
-    dbg!(numbers.iter().collect::<Vec<_>>());
-    dbg!(numbers[2020 - 1]);
+
+    println!("-> {:?}", numbers.last());
 }
