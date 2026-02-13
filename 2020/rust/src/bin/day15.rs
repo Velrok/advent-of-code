@@ -1,14 +1,14 @@
 // --- Day 15: Rambunctious Recitation ---
 fn main() {
     let example_numbers = vec![0, 3, 6];
-    let puzzle_numbers = vec![9, 6, 0, 10, 18, 2];
-    let mut numbers = puzzle_numbers;
+    let puzzle_numbers = vec![9, 6, 0, 10, 18, 2, 1];
+    let mut numbers = puzzle_numbers.clone();
     // let mut numbers = example_numbers.clone();
 
     // 0, 3, 6
     // 0, 1, 2
     //        , 3
-    for i in numbers.len()..2021 {
+    for i in numbers.len()..2020 {
         println!("Turn: {}", i + 1);
         let needle = numbers[i - 1];
         println!(" needle: {needle}");
