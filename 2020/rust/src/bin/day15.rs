@@ -1,4 +1,6 @@
-use im::HashMap;
+// use im::HashMap;
+
+use std::collections::HashMap;
 
 // --- Day 15: Rambunctious Recitation ---
 fn main() {
@@ -11,7 +13,7 @@ fn main() {
     // let end = 2020;
     let end = 30000000;
     for i in 1..end {
-        print!(".");
+        // print!(".");
         // println!("i: {i}");
         let needle_index = i - 1;
         let needle = numbers[needle_index];
@@ -22,6 +24,7 @@ fn main() {
             None => 0,
         };
         // println!(" age: {age}");
+        // dbg!(recitation.clone());
 
         match numbers.get(i) {
             Some(_) => (), // skipp
