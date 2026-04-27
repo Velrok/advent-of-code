@@ -63,6 +63,7 @@ fn parse_nearby_tickets(str: &str) -> Vec<Vec<usize>> {
 mod tests {
     use super::*;
 
+    #[test]
     fn test_parse_nearby_tickets() {
         assert_eq!(
             parse_nearby_tickets(
