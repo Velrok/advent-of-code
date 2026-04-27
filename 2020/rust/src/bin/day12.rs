@@ -123,7 +123,7 @@ fn parse_instructions(i: &str) -> Vec<Instruction> {
                 "L" => L(value),
                 "R" => R(value),
                 "F" => F(value),
-                _ => panic!(format!("Unknown instruction {}", action)),
+                _ => panic!("Unknown instruction {}", action),
             }
         })
         .collect()
