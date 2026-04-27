@@ -5,13 +5,32 @@ struct Field {
     ranges: [RangeInclusive<usize>; 2],
 }
 
+impl Field {
+    fn contains(&self, other: usize) -> bool {
+        self.ranges
+            .clone()
+            .map(|range| range.clone().any(|x| x == other))
+            .iter()
+            .all(|x| *x)
+    }
+}
+
 fn main() {
     let input = include_str!("../../inputs/day16.txt");
     let parts: Vec<_> = input.split("\n\n").collect();
     let fields = parse_fields(parts[0]);
     let _your_ticket_str = parts[1];
     let nearby_tickets: Vec<Vec<usize>> = parse_nearby_tickets(parts[2]);
-    dbg!(parts[2]);
+
+    dbg!(part1(fields, nearby_tickets));
+}
+
+fn part1(fields: Vec<Field>, nearby_tickets: Vec<Vec<usize>>) -> _ {
+    let field_ranges = fields.iter().flat_map(|field| field.ranges.clone());
+    nearby_tickets
+        .iter()
+        .flatten()
+        .filter(|n| !field_ranges.any(|range| !range.iter().any(**n)))
 }
 
 fn parse_fields(fields_str: &str) -> Vec<Field> {
