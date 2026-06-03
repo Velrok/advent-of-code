@@ -5,6 +5,7 @@ authors = ["Waldemar <waldemar.schwan@uswitch.com>"]
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0.102"
 
 [[bin]]
 name = "day01"
@@ -21,3 +22,7 @@ path = "src/bin/day03.rs"
 [[bin]]
 name = "day06"
 path = "src/bin/day06.rs"
+
+[[bin]]
+name = "day07"
+path = "src/bin/day07.rs"
