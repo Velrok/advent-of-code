@@ -1,4 +1,7 @@
+use anyhow::Context;
 use anyhow::Result;
+use itertools::Itertools;
+use rayon::*;
 use std::fs;
 
 type Address = usize;
@@ -57,7 +60,7 @@ impl Program {
                 self.memory[self.instruction_pointer + 3] as usize,
             ),
             99 => Instruction::End,
-            _ => panic!("Invalid instruction number."),
+            _ => unreachable!("We are only fed valid programs."),
         }
     }
 }
@@ -67,16 +70,14 @@ fn main() -> Result<()> {
     let result = run_modified(12, 2, prog.clone());
     println!("P1: {result}");
 
-    'outer: for noun in 1..100 {
-        for verb in 1..100 {
-            let result = run_modified(noun, verb, prog.clone());
-            if result == 19690720 {
-                let out = noun * 100 + verb;
-                println!("P2: {out}");
-                break 'outer;
-            }
-        }
-    }
+    let mut haystack = (0..100).cartesian_product(0..100);
+    let needle = 19690720;
+    let result = haystack
+        .find_map(|(noun, verb)| {
+            (run_modified(noun, verb, prog.clone()) == needle).then_some(noun * 100 + verb)
+        })
+        .context("None of the noun/verb pairs found the expected result.")?;
+    println!("P2: {result}");
 
     Ok(())
 }
