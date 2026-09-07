@@ -23,10 +23,10 @@ fn main() -> Result<()> {
 }
 
 fn read_program(filename: &str) -> Result<Program> {
-    let data = fs::read_to_string(filename)?
+    let data: Vec<i32> = fs::read_to_string(filename)?
         .trim_end()
         .split(',')
         .map(|c| c.parse::<i32>().expect("Program is made up of integers."))
         .collect();
-    Ok(Program::new(data))
+    Ok(Program::new(&data))
 }

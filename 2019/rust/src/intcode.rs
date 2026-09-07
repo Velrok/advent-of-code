@@ -13,9 +13,9 @@ enum Instruction {
 }
 
 impl Program {
-    pub fn new(data: Vec<i32>) -> Self {
+    pub fn new(data: &[i32]) -> Self {
         Self {
-            memory: data,
+            memory: data.to_vec(),
             instruction_pointer: 0,
         }
     }
@@ -58,5 +58,27 @@ impl Program {
             99 => Instruction::End,
             _ => unreachable!("We are only fed valid programs."),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const ADD: i32 = 1;
+    const MULT: i32 = 2;
+    const END: i32 = 99;
+
+    const SIMPLE_ADD_PROG: [i32; 7] = [ADD, 5, 6, 0, END, 2, 3];
+    const SIMPLE_MULT_PROG: [i32; 7] = [MULT, 5, 6, 0, END, 2, 3];
+
+    #[test]
+    fn test_add_pos_mode() {
+        assert_eq!(Program::new(&SIMPLE_ADD_PROG).exec(5, 6), 5);
+    }
+
+    #[test]
+    fn test_mult_pos_mode() {
+        assert_eq!(Program::new(&SIMPLE_MULT_PROG).exec(5, 6), 6);
     }
 }
