@@ -56,7 +56,9 @@ impl Program {
     }
 
     fn read_instruction(&self) -> Instruction {
-        match self.memory[self.instruction_pointer] {
+        let op_code = self.memory[self.instruction_pointer] % 100;
+        let mods = self.memory[self.instruction_pointer] / 100;
+        match op_code {
             1 => Instruction::Add(
                 Parameter::Position(self.memory[self.instruction_pointer + 1] as usize),
                 Parameter::Position(self.memory[self.instruction_pointer + 2] as usize),
@@ -69,6 +71,14 @@ impl Program {
             ),
             99 => Instruction::End,
             _ => unreachable!("We are only fed valid programs."),
+        }
+    }
+
+    fn parse_param(&self, mods: i32, param_pos: u32) -> Parameter {
+        
+        match (mods / 10i32.pow(param_pos)) % 10 {
+            0 => Parameter::Position()
+            1 => Parameter::Immediate(self.memory[self.instruction_pointer + param_pos])
         }
     }
 }
