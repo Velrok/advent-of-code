@@ -7,14 +7,14 @@ use std::fs;
 
 fn main() -> Result<()> {
     let prog = read_program("inputs/day02.txt")?;
-    let result = prog.clone().exec(12, 2);
+    let result = prog.clone().exec_without_io(Some(12), Some(2));
     println!("P1: {result}");
 
     let mut haystack = (0..100).cartesian_product(0..100);
     let needle = 19690720;
     let result = haystack
         .find_map(|(noun, verb)| {
-            (prog.clone().exec(noun, verb) == needle).then_some(noun * 100 + verb)
+            (prog.clone().exec_without_io(Some(noun), Some(verb)) == needle).then_some(noun * 100 + verb)
         })
         .context("None of the noun/verb pairs found the expected result.")?;
     println!("P2: {result}");

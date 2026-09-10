@@ -5,16 +5,18 @@ enum Parameter {
     Immediate(i32),
 }
 
+enum Instruction {
+    Add(Parameter, Parameter, Address),
+    Mult(Parameter, Parameter, Address),
+    Input(Address),
+    Output(Address),
+    End,
+}
+
 #[derive(Clone)]
 pub struct Program {
     memory: Vec<i32>,
     instruction_pointer: Address,
-}
-
-enum Instruction {
-    Add(Parameter, Parameter, Address),
-    Mult(Parameter, Parameter, Address),
-    End,
 }
 
 impl Program {
@@ -25,9 +27,24 @@ impl Program {
         }
     }
 
-    pub fn exec(&mut self, noun: i32, verb: i32) -> i32 {
-        self.memory[1] = noun;
-        self.memory[2] = verb;
+    pub fn exec_without_io(&mut self, noun: Option<i32>, verb: Option<i32>) -> i32 {
+        self.exec(noun, verb, &[], &mut vec![])
+    }
+
+    pub fn exec_without_verb_noun(&mut self, inputs: &[i32], output: &mut impl std::io::Write) -> i32 {
+        self.exec(None, None, inputs, output)
+    }
+
+    pub fn exec(&mut self, noun: Option<i32>, verb: Option<i32>, inputs: &[i32], output: &mut impl std::io::Write) -> i32 {
+        if let Some(val) = noun {
+            self.memory[1] = val
+        };
+        if let Some(val) = verb {
+            self.memory[2] = val
+        };
+
+        let mut inputs_iter = inputs.iter();
+
         loop {
             let op = self.read_instruction();
             match op {
@@ -37,13 +54,25 @@ impl Program {
                     self.memory[target] = x + y;
                     self.instruction_pointer += 4
                 }
-                Instruction::Mult(p1, p2, target) => {
+                Instruction::Mult(p1, p2, target_addr) => {
                     let x = self.param_value(p1);
                     let y = self.param_value(p2);
-                    self.memory[target] = x * y;
+                    self.memory[target_addr] = x * y;
                     self.instruction_pointer += 4
                 }
                 Instruction::End => return self.memory[0],
+                Instruction::Input(target_addr) => {
+                    self.memory[target_addr] = *inputs_iter
+                        .next()
+                        .expect("Expected another input, gone none.");
+                    self.instruction_pointer += 2;
+                }
+                Instruction::Output(read_addr) => {
+                    let val = self.memory[read_addr];
+                    self.instruction_pointer += 2;
+                    writeln!(output, "{val}")
+                        .expect("Expected valid output buffer.");
+                }
             }
         }
     }
@@ -68,6 +97,8 @@ impl Program {
                 self.read_param(2),
                 self.memory[self.instruction_pointer + 3] as usize,
             ),
+            3 => Instruction::Input(self.memory[self.instruction_pointer + 1] as usize),
+            4 => Instruction::Output(self.memory[self.instruction_pointer + 1] as usize),
             99 => Instruction::End,
             _ => unreachable!("We are only fed valid programs."),
         }
@@ -91,6 +122,8 @@ mod tests {
 
     const ADD: i32 = 1;
     const MULT: i32 = 2;
+    const INP: i32 = 3;
+    const OUTP: i32 = 4;
     const END: i32 = 99;
 
     const ADD_PROG: [i32; 7] = [ADD, 5, 6, 0, END, 2, 3];
@@ -98,12 +131,12 @@ mod tests {
 
     #[test]
     fn test_add_pos_mode() {
-        assert_eq!(Program::new(&ADD_PROG).exec(5, 6), 5);
+        assert_eq!(Program::new(&ADD_PROG).exec_without_io(Some(5), Some(6)), 5);
     }
 
     #[test]
     fn test_mult_pos_mode() {
-        assert_eq!(Program::new(&MULT_PROG).exec(5, 6), 6);
+        assert_eq!(Program::new(&MULT_PROG).exec_without_io(Some(5), Some(6)), 6);
     }
 
     // Immediate mode
@@ -114,11 +147,26 @@ mod tests {
 
     #[test]
     fn test_add_immediate_mode() {
-        assert_eq!(Program::new(&ADD_PROG_IMMEDIAT_MODE).exec(5, 6), 11);
+        assert_eq!(
+            Program::new(&ADD_PROG_IMMEDIAT_MODE).exec_without_io(Some(5), Some(6)),
+            11
+        );
     }
 
     #[test]
     fn test_mult_immediate_mode() {
-        assert_eq!(Program::new(&MULT_PROG_IMMEDIAT_MODE).exec(5, 6), 30);
+        assert_eq!(
+            Program::new(&MULT_PROG_IMMEDIAT_MODE).exec_without_io(Some(5), Some(6)),
+            30
+        );
+    }
+
+    const IO_PROG: [i32; 6] = [INP, 5, OUTP, 5, END, -2];
+
+    #[test]
+    fn test_io() {
+        let mut output = Vec::new();
+            Program::new(&IO_PROG).exec_without_verb_noun(&[7], &mut output);
+        assert_eq!(String::from_utf8(output).unwrap(),"7\n");
     }
 }
