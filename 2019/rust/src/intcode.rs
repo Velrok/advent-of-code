@@ -57,16 +57,15 @@ impl Program {
 
     fn read_instruction(&self) -> Instruction {
         let op_code = self.memory[self.instruction_pointer] % 100;
-        let mods = self.memory[self.instruction_pointer] / 100;
         match op_code {
             1 => Instruction::Add(
-                Parameter::Position(self.memory[self.instruction_pointer + 1] as usize),
-                Parameter::Position(self.memory[self.instruction_pointer + 2] as usize),
+                self.read_param(1),
+                self.read_param(2),
                 self.memory[self.instruction_pointer + 3] as usize,
             ),
             2 => Instruction::Mult(
-                Parameter::Position(self.memory[self.instruction_pointer + 1] as usize),
-                Parameter::Position(self.memory[self.instruction_pointer + 2] as usize),
+                self.read_param(1),
+                self.read_param(2),
                 self.memory[self.instruction_pointer + 3] as usize,
             ),
             99 => Instruction::End,
@@ -74,11 +73,14 @@ impl Program {
         }
     }
 
-    fn parse_param(&self, mods: i32, param_pos: u32) -> Parameter {
-        
-        match (mods / 10i32.pow(param_pos)) % 10 {
-            0 => Parameter::Position()
-            1 => Parameter::Immediate(self.memory[self.instruction_pointer + param_pos])
+    fn read_param(&self, number: u32) -> Parameter {
+        let modifier = (self.memory[self.instruction_pointer] / 10i32.pow(1 + number)) % 10;
+        match modifier {
+            0 => Parameter::Position(
+                self.memory[self.instruction_pointer + number as usize] as usize,
+            ),
+            1 => Parameter::Immediate(self.memory[self.instruction_pointer + number as usize]),
+            _ => unreachable!("We are only fed valid programs."),
         }
     }
 }
@@ -107,11 +109,16 @@ mod tests {
     // Immediate mode
     const P1_IMMEDIATE: i32 = 100;
     const P2_IMMEDIATE: i32 = 1000;
-    const P3_IMMEDIATE: i32 = 10000;
     const ADD_PROG_IMMEDIAT_MODE: [i32; 5] = [ADD + P1_IMMEDIATE + P2_IMMEDIATE, 5, 6, 0, END];
+    const MULT_PROG_IMMEDIAT_MODE: [i32; 5] = [MULT + P1_IMMEDIATE + P2_IMMEDIATE, 5, 6, 0, END];
 
     #[test]
     fn test_add_immediate_mode() {
-        assert_eq!(Program::new(&ADD_PROG_IMMEDIAT_MODE).exec(5, 6), 11,);
+        assert_eq!(Program::new(&ADD_PROG_IMMEDIAT_MODE).exec(5, 6), 11);
+    }
+
+    #[test]
+    fn test_mult_immediate_mode() {
+        assert_eq!(Program::new(&MULT_PROG_IMMEDIAT_MODE).exec(5, 6), 30);
     }
 }
