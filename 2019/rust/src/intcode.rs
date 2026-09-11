@@ -44,11 +44,7 @@ impl Program {
         self.exec(noun, verb, &[], &mut vec![])
     }
 
-    pub fn exec_without_verb_noun(
-        &mut self,
-        inputs: &[i32],
-        output: &mut impl std::io::Write,
-    ) -> i32 {
+    pub fn exec_without_verb_noun(&mut self, inputs: &[i32], output: &mut Vec<i32>) -> i32 {
         self.exec(None, None, inputs, output)
     }
 
@@ -57,7 +53,7 @@ impl Program {
         noun: Option<i32>,
         verb: Option<i32>,
         inputs: &[i32],
-        output: &mut impl std::io::Write,
+        output: &mut Vec<i32>,
     ) -> i32 {
         if let Some(val) = noun {
             self.memory[1] = val
@@ -93,7 +89,7 @@ impl Program {
                 Instruction::Output(read_addr) => {
                     let val = self.memory[read_addr];
                     self.instruction_pointer += 2;
-                    writeln!(output, "{val}").expect("Expected valid output buffer.");
+                    output.push(val);
                 }
                 Instruction::JumpIfTrue(param1, param2) => {
                     if self.param_value(param1) > 0 {
@@ -238,9 +234,9 @@ mod tests {
 
     #[test]
     fn test_io() {
-        let mut output = Vec::new();
+        let mut output: Vec<i32> = Vec::new();
         Program::new(&IO_PROG).exec_without_verb_noun(&[7], &mut output);
-        assert_eq!(String::from_utf8(output).unwrap(), "7\n");
+        assert_eq!(output, [7]);
     }
 
     #[test]
