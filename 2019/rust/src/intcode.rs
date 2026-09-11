@@ -10,6 +10,10 @@ enum Instruction {
     Mult(Parameter, Parameter, Address),
     Input(Address),
     Output(Address),
+    JumpIfTrue(Parameter, Parameter),
+    JumpIfFalse(Parameter, Parameter),
+    LessThen(Parameter, Parameter, Address),
+    Equals(Parameter, Parameter, Address),
     End,
 }
 
@@ -31,11 +35,21 @@ impl Program {
         self.exec(noun, verb, &[], &mut vec![])
     }
 
-    pub fn exec_without_verb_noun(&mut self, inputs: &[i32], output: &mut impl std::io::Write) -> i32 {
+    pub fn exec_without_verb_noun(
+        &mut self,
+        inputs: &[i32],
+        output: &mut impl std::io::Write,
+    ) -> i32 {
         self.exec(None, None, inputs, output)
     }
 
-    pub fn exec(&mut self, noun: Option<i32>, verb: Option<i32>, inputs: &[i32], output: &mut impl std::io::Write) -> i32 {
+    pub fn exec(
+        &mut self,
+        noun: Option<i32>,
+        verb: Option<i32>,
+        inputs: &[i32],
+        output: &mut impl std::io::Write,
+    ) -> i32 {
         if let Some(val) = noun {
             self.memory[1] = val
         };
@@ -70,9 +84,24 @@ impl Program {
                 Instruction::Output(read_addr) => {
                     let val = self.memory[read_addr];
                     self.instruction_pointer += 2;
-                    writeln!(output, "{val}")
-                        .expect("Expected valid output buffer.");
+                    writeln!(output, "{val}").expect("Expected valid output buffer.");
                 }
+                Instruction::JumpIfTrue(param1, param2) => {
+                    if self.param_value(param1) > 0 {
+                        self.instruction_pointer = self.param_value(param2) as usize;
+                    } else {
+                        self.instruction_pointer += 3;
+                    }
+                }
+                Instruction::JumpIfFalse(param1, param2) => {
+                    if self.param_value(param1) == 0 {
+                        self.instruction_pointer = self.param_value(param2) as usize;
+                    } else {
+                        self.instruction_pointer += 3;
+                    }
+                }
+                Instruction::LessThen(param1, param2, _) => todo!(),
+                Instruction::Equals(param1, param2, _) => todo!(),
             }
         }
     }
@@ -99,6 +128,18 @@ impl Program {
             ),
             3 => Instruction::Input(self.memory[self.instruction_pointer + 1] as usize),
             4 => Instruction::Output(self.memory[self.instruction_pointer + 1] as usize),
+            5 => Instruction::JumpIfTrue(self.read_param(1), self.read_param(2)),
+            6 => Instruction::JumpIfFalse(self.read_param(1), self.read_param(2)),
+            7 => Instruction::LessThen(
+                self.read_param(1),
+                self.read_param(2),
+                self.memory[self.instruction_pointer + 3] as usize,
+            ),
+            8 => Instruction::Equals(
+                self.read_param(1),
+                self.read_param(2),
+                self.memory[self.instruction_pointer + 3] as usize,
+            ),
             99 => Instruction::End,
             _ => unreachable!("We are only fed valid programs."),
         }
@@ -124,6 +165,8 @@ mod tests {
     const MULT: i32 = 2;
     const INP: i32 = 3;
     const OUTP: i32 = 4;
+    const JUMP_T: i32 = 5;
+    const JUMP_F: i32 = 6;
     const END: i32 = 99;
 
     const ADD_PROG: [i32; 7] = [ADD, 5, 6, 0, END, 2, 3];
@@ -136,7 +179,10 @@ mod tests {
 
     #[test]
     fn test_mult_pos_mode() {
-        assert_eq!(Program::new(&MULT_PROG).exec_without_io(Some(5), Some(6)), 6);
+        assert_eq!(
+            Program::new(&MULT_PROG).exec_without_io(Some(5), Some(6)),
+            6
+        );
     }
 
     // Immediate mode
@@ -166,7 +212,49 @@ mod tests {
     #[test]
     fn test_io() {
         let mut output = Vec::new();
-            Program::new(&IO_PROG).exec_without_verb_noun(&[7], &mut output);
-        assert_eq!(String::from_utf8(output).unwrap(),"7\n");
+        Program::new(&IO_PROG).exec_without_verb_noun(&[7], &mut output);
+        assert_eq!(String::from_utf8(output).unwrap(), "7\n");
+    }
+
+    #[test]
+    fn test_jump_if_true() {
+        let prog = [
+            JUMP_T + P1_IMMEDIATE + P2_IMMEDIATE,
+            1,
+            7,
+            ADD + P1_IMMEDIATE + P2_IMMEDIATE,
+            3,
+            7,
+            0,
+            END,
+        ];
+        // jump away leaves the initial instruction
+        assert_eq!(
+            Program::new(&prog).exec_without_io(Some(1), None),
+            JUMP_T + P1_IMMEDIATE + P2_IMMEDIATE
+        );
+        // no jump overwrites the initial instruciton with 3 + 7 = 10
+        assert_eq!(Program::new(&prog).exec_without_io(Some(0), None), 10);
+    }
+
+    #[test]
+    fn test_jump_if_false() {
+        let prog = [
+            JUMP_F + P1_IMMEDIATE + P2_IMMEDIATE,
+            1,
+            7,
+            ADD + P1_IMMEDIATE + P2_IMMEDIATE,
+            3,
+            7,
+            0,
+            END,
+        ];
+        // jump away leaves the initial instruction
+        assert_eq!(
+            Program::new(&prog).exec_without_io(Some(0), None),
+            JUMP_F + P1_IMMEDIATE + P2_IMMEDIATE
+        );
+        // no jump overwrites the initial instruciton with 3 + 7 = 10
+        assert_eq!(Program::new(&prog).exec_without_io(Some(1), None), 10);
     }
 }
