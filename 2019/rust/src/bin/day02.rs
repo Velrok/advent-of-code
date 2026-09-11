@@ -3,10 +3,9 @@ use anyhow::Result;
 use aoc19::intcode::*;
 use itertools::Itertools;
 use rayon::*;
-use std::fs;
 
 fn main() -> Result<()> {
-    let prog = read_program("inputs/day02.txt")?;
+    let prog = Program::from_file(std::path::Path::new("inputs/day02.txt"))?;
     let result = prog.clone().exec_without_io(Some(12), Some(2));
     println!("P1: {result}");
 
@@ -20,13 +19,4 @@ fn main() -> Result<()> {
     println!("P2: {result}");
 
     Ok(())
-}
-
-fn read_program(filename: &str) -> Result<Program> {
-    let data: Vec<i32> = fs::read_to_string(filename)?
-        .trim_end()
-        .split(',')
-        .map(|c| c.parse::<i32>().expect("Program is made up of integers."))
-        .collect();
-    Ok(Program::new(&data))
 }

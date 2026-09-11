@@ -31,6 +31,15 @@ impl Program {
         }
     }
 
+    pub fn from_file(filename: &std::path::Path) -> anyhow::Result<Self> {
+        let data: Vec<i32> = std::fs::read_to_string(filename)?
+            .trim_end()
+            .split(',')
+            .map(|c| c.parse::<i32>().expect("Program is made up of integers."))
+            .collect();
+        Ok(Self::new(&data))
+    }
+
     pub fn exec_without_io(&mut self, noun: Option<i32>, verb: Option<i32>) -> i32 {
         self.exec(noun, verb, &[], &mut vec![])
     }
