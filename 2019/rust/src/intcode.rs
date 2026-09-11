@@ -100,8 +100,24 @@ impl Program {
                         self.instruction_pointer += 3;
                     }
                 }
-                Instruction::LessThen(param1, param2, _) => todo!(),
-                Instruction::Equals(param1, param2, _) => todo!(),
+                Instruction::LessThen(param1, param2, target_addr) => {
+                    let result = if self.param_value(param1) < self.param_value(param2) {
+                        1
+                    } else {
+                        0
+                    };
+                    self.memory[target_addr] = result;
+                    self.instruction_pointer += 4;
+                }
+                Instruction::Equals(param1, param2, target_addr) => {
+                    let result = if self.param_value(param1) == self.param_value(param2) {
+                        1
+                    } else {
+                        0
+                    };
+                    self.memory[target_addr] = result;
+                    self.instruction_pointer += 4;
+                }
             }
         }
     }
@@ -167,6 +183,8 @@ mod tests {
     const OUTP: i32 = 4;
     const JUMP_T: i32 = 5;
     const JUMP_F: i32 = 6;
+    const LESS_THEN: i32 = 7;
+    const EQUAL: i32 = 8;
     const END: i32 = 99;
 
     const ADD_PROG: [i32; 7] = [ADD, 5, 6, 0, END, 2, 3];
@@ -256,5 +274,23 @@ mod tests {
         );
         // no jump overwrites the initial instruciton with 3 + 7 = 10
         assert_eq!(Program::new(&prog).exec_without_io(Some(1), None), 10);
+    }
+
+    #[test]
+    fn test_less_then() {
+        let prog = [LESS_THEN + P1_IMMEDIATE + P2_IMMEDIATE, -1, -1, 0, END];
+        // 3 < 4 = true -> we store 1 in pos 0
+        assert_eq!(Program::new(&prog).exec_without_io(Some(3), Some(4)), 1);
+        // 5 < 4 = false -> we store 0 in pos 0
+        assert_eq!(Program::new(&prog).exec_without_io(Some(5), Some(4)), 0);
+    }
+
+    #[test]
+    fn test_equals() {
+        let prog = [EQUAL + P1_IMMEDIATE + P2_IMMEDIATE, -1, -10, 0, END];
+        // 3 == 3 = true -> we store 1 in pos 0
+        assert_eq!(Program::new(&prog).exec_without_io(Some(3), Some(3)), 1);
+        // 5 == 4 = false -> we store 0 in pos 0
+        assert_eq!(Program::new(&prog).exec_without_io(Some(5), Some(4)), 0);
     }
 }
