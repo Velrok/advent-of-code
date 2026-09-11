@@ -27,15 +27,14 @@ fn part01(amp_p: &Program) {
 
 fn part02(amp_p: &Program) {
     let problem_space: Vec<Vec<i32>> = LOOPING_PHASES.iter().copied().permutations(5).collect();
-    let phases = problem_space.first().unwrap();
-    let result = run_amp_chain(&amp_p, phases);
-    dbg!(result);
-    // let max_thrust = problem_space
-    //     .par_iter()
-    //     .map(|phases| run_amp_chain(amp_p, phases))
-    //     .max()
-    //     .expect("Expected to get results.");
-    // println!("part 1 | max_thrust: {max_thrust}");
+    // let result = run_amp_chain(&amp_p, phases);
+    // dbg!(result);
+    let max_thrust = problem_space
+        .par_iter()
+        .map(|phases| run_amp_chain(amp_p, phases))
+        .max()
+        .expect("Expected to get results.");
+    println!("part 2 | max_thrust: {max_thrust}");
 }
 
 fn run_amp_chain(amp: &Program, phases: &[i32]) -> i32 {
@@ -44,7 +43,7 @@ fn run_amp_chain(amp: &Program, phases: &[i32]) -> i32 {
     for phase in phases {
         io_buffer.clear();
         io_buffer.push_back(*phase);
-        io_buffer.push_back(0);
+        io_buffer.push_back(signal);
 
         amp.clone().exec_without_verb_noun(&mut io_buffer);
         signal = io_buffer
