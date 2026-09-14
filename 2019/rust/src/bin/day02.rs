@@ -2,7 +2,6 @@ use anyhow::Context;
 use anyhow::Result;
 use aoc19::intcode::*;
 use itertools::Itertools;
-use rayon::*;
 
 fn main() -> Result<()> {
     let prog = Program::from_file(std::path::Path::new("inputs/day02.txt"))?;
