@@ -1,3 +1,4 @@
+use anyhow::Result;
 use std::collections::VecDeque;
 
 type Address = usize;
@@ -5,7 +6,13 @@ type Word = i32;
 
 enum Parameter {
     Position(Address),
-    Immediate(i32),
+    Immediate(Word),
+}
+
+enum StepResult<'a> {
+    Stopped(Word),
+    InstructionProcessed,
+    AwaitingInput(&'a mut VecDeque<Word>),
 }
 
 enum Instruction {
@@ -22,20 +29,24 @@ enum Instruction {
 
 #[derive(Clone)]
 pub struct Program {
-    memory: Vec<i32>,
+    memory: Vec<Word>,
     instruction_pointer: Address,
+    inputs: VecDeque<Word>,
+    outputs: VecDeque<Word>,
 }
 
 impl Program {
-    pub fn new(data: &[i32]) -> Self {
+    pub fn new(data: &[Word]) -> Self {
         Self {
             memory: data.to_vec(),
             instruction_pointer: 0,
+            inputs: VecDeque::new(),
+            outputs: VecDeque::new(),
         }
     }
 
     pub fn from_file(filename: &std::path::Path) -> anyhow::Result<Self> {
-        let data: Vec<i32> = std::fs::read_to_string(filename)?
+        let data: Vec<Word> = std::fs::read_to_string(filename)?
             .trim_end()
             .split(',')
             .map(|c| c.parse::<i32>().expect("Program is made up of integers."))
@@ -43,20 +54,23 @@ impl Program {
         Ok(Self::new(&data))
     }
 
-    pub fn exec_without_io(&mut self, noun: Option<i32>, verb: Option<i32>) -> i32 {
-        self.exec(noun, verb, &mut VecDeque::new())
+    pub fn exec_without_io(&mut self, noun: Option<Word>, verb: Option<Word>) -> Result<Word> {
+        self.exec(noun, verb)
     }
 
-    pub fn exec_without_verb_noun(&mut self, io_buffer: &mut VecDeque<i32>) -> i32 {
-        self.exec(None, None, io_buffer)
+    pub fn exec_without_verb_noun(&mut self) -> Result<Word> {
+        self.exec(None, None)
     }
 
-    pub fn exec(
-        &mut self,
-        noun: Option<i32>,
-        verb: Option<i32>,
-        io_buffer: &mut VecDeque<i32>,
-    ) -> i32 {
+    pub fn feed_input(&mut self, val: Word) {
+        self.inputs.push_back(val)
+    }
+
+    pub fn read_output(&mut self) -> Option<Word> {
+        self.outputs.pop_front()
+    }
+
+    pub fn exec(&mut self, noun: Option<Word>, verb: Option<Word>) -> anyhow::Result<Word> {
         if let Some(val) = noun {
             self.memory[1] = val
         };
@@ -65,64 +79,85 @@ impl Program {
         };
 
         loop {
-            let op = self.read_instruction();
-            match op {
-                Instruction::Add(p1, p2, target) => {
-                    let x = self.param_value(p1);
-                    let y = self.param_value(p2);
-                    self.memory[target] = x + y;
-                    self.instruction_pointer += 4
+            match self.step() {
+                StepResult::Stopped(val) => {
+                    return Ok(val);
                 }
-                Instruction::Mult(p1, p2, target_addr) => {
-                    let x = self.param_value(p1);
-                    let y = self.param_value(p2);
-                    self.memory[target_addr] = x * y;
-                    self.instruction_pointer += 4
+                StepResult::InstructionProcessed => {}
+                StepResult::AwaitingInput(_) => {
+                    anyhow::bail!("Expected more inputs. Use step if you need to pause mid exec.");
                 }
-                Instruction::End => return self.memory[0],
-                Instruction::Input(target_addr) => {
-                    self.memory[target_addr] = io_buffer
-                        .pop_front()
-                        .expect("Expected another input, got none.");
+            }
+        }
+    }
+
+    fn step(&mut self) -> StepResult {
+        let op = self.read_instruction();
+        match op {
+            Instruction::Add(p1, p2, target) => {
+                let x = self.param_value(p1);
+                let y = self.param_value(p2);
+                self.memory[target] = x + y;
+                self.instruction_pointer += 4;
+                StepResult::InstructionProcessed
+            }
+            Instruction::Mult(p1, p2, target_addr) => {
+                let x = self.param_value(p1);
+                let y = self.param_value(p2);
+                self.memory[target_addr] = x * y;
+                self.instruction_pointer += 4;
+                StepResult::InstructionProcessed
+            }
+            Instruction::End => StepResult::Stopped(self.memory[0]),
+            Instruction::Input(target_addr) => match self.inputs.pop_front() {
+                Some(val) => {
+                    self.memory[target_addr] = val;
                     self.instruction_pointer += 2;
+                    StepResult::InstructionProcessed
                 }
-                Instruction::Output(read_addr) => {
-                    let val = self.memory[read_addr];
-                    self.instruction_pointer += 2;
-                    io_buffer.push_back(val);
+                None => StepResult::AwaitingInput(&mut self.inputs),
+            },
+            Instruction::Output(read_addr) => {
+                let val = self.memory[read_addr];
+                self.instruction_pointer += 2;
+                self.outputs.push_back(val);
+                StepResult::InstructionProcessed
+            }
+            Instruction::JumpIfTrue(param1, param2) => {
+                if self.param_value(param1) > 0 {
+                    self.instruction_pointer = self.param_value(param2) as usize;
+                } else {
+                    self.instruction_pointer += 3;
                 }
-                Instruction::JumpIfTrue(param1, param2) => {
-                    if self.param_value(param1) > 0 {
-                        self.instruction_pointer = self.param_value(param2) as usize;
-                    } else {
-                        self.instruction_pointer += 3;
-                    }
+                StepResult::InstructionProcessed
+            }
+            Instruction::JumpIfFalse(param1, param2) => {
+                if self.param_value(param1) == 0 {
+                    self.instruction_pointer = self.param_value(param2) as usize;
+                } else {
+                    self.instruction_pointer += 3;
                 }
-                Instruction::JumpIfFalse(param1, param2) => {
-                    if self.param_value(param1) == 0 {
-                        self.instruction_pointer = self.param_value(param2) as usize;
-                    } else {
-                        self.instruction_pointer += 3;
-                    }
-                }
-                Instruction::LessThen(param1, param2, target_addr) => {
-                    let result = if self.param_value(param1) < self.param_value(param2) {
-                        1
-                    } else {
-                        0
-                    };
-                    self.memory[target_addr] = result;
-                    self.instruction_pointer += 4;
-                }
-                Instruction::Equals(param1, param2, target_addr) => {
-                    let result = if self.param_value(param1) == self.param_value(param2) {
-                        1
-                    } else {
-                        0
-                    };
-                    self.memory[target_addr] = result;
-                    self.instruction_pointer += 4;
-                }
+                StepResult::InstructionProcessed
+            }
+            Instruction::LessThen(param1, param2, target_addr) => {
+                let result = if self.param_value(param1) < self.param_value(param2) {
+                    1
+                } else {
+                    0
+                };
+                self.memory[target_addr] = result;
+                self.instruction_pointer += 4;
+                StepResult::InstructionProcessed
+            }
+            Instruction::Equals(param1, param2, target_addr) => {
+                let result = if self.param_value(param1) == self.param_value(param2) {
+                    1
+                } else {
+                    0
+                };
+                self.memory[target_addr] = result;
+                self.instruction_pointer += 4;
+                StepResult::InstructionProcessed
             }
         }
     }
@@ -197,13 +232,20 @@ mod tests {
 
     #[test]
     fn test_add_pos_mode() {
-        assert_eq!(Program::new(&ADD_PROG).exec_without_io(Some(5), Some(6)), 5);
+        assert_eq!(
+            Program::new(&ADD_PROG)
+                .exec_without_io(Some(5), Some(6))
+                .unwrap(),
+            5
+        );
     }
 
     #[test]
     fn test_mult_pos_mode() {
         assert_eq!(
-            Program::new(&MULT_PROG).exec_without_io(Some(5), Some(6)),
+            Program::new(&MULT_PROG)
+                .exec_without_io(Some(5), Some(6))
+                .unwrap(),
             6
         );
     }
@@ -217,7 +259,9 @@ mod tests {
     #[test]
     fn test_add_immediate_mode() {
         assert_eq!(
-            Program::new(&ADD_PROG_IMMEDIAT_MODE).exec_without_io(Some(5), Some(6)),
+            Program::new(&ADD_PROG_IMMEDIAT_MODE)
+                .exec_without_io(Some(5), Some(6))
+                .unwrap(),
             11
         );
     }
@@ -225,7 +269,9 @@ mod tests {
     #[test]
     fn test_mult_immediate_mode() {
         assert_eq!(
-            Program::new(&MULT_PROG_IMMEDIAT_MODE).exec_without_io(Some(5), Some(6)),
+            Program::new(&MULT_PROG_IMMEDIAT_MODE)
+                .exec_without_io(Some(5), Some(6))
+                .unwrap(),
             30
         );
     }
@@ -234,10 +280,10 @@ mod tests {
 
     #[test]
     fn test_io() {
-        let mut output = VecDeque::new();
-        output.push_back(7);
-        Program::new(&IO_PROG).exec_without_verb_noun(&mut output);
-        assert_eq!(output, [7]);
+        let mut program = Program::new(&IO_PROG);
+        program.feed_input(7);
+        program.exec_without_verb_noun().unwrap();
+        assert_eq!(program.read_output(), Some(7));
     }
 
     #[test]
@@ -254,11 +300,14 @@ mod tests {
         ];
         // jump away leaves the initial instruction
         assert_eq!(
-            Program::new(&prog).exec_without_io(Some(1), None),
+            Program::new(&prog).exec_without_io(Some(1), None).unwrap(),
             JUMP_T + P1_IMMEDIATE + P2_IMMEDIATE
         );
         // no jump overwrites the initial instruciton with 3 + 7 = 10
-        assert_eq!(Program::new(&prog).exec_without_io(Some(0), None), 10);
+        assert_eq!(
+            Program::new(&prog).exec_without_io(Some(0), None).unwrap(),
+            10
+        );
     }
 
     #[test]
@@ -275,28 +324,43 @@ mod tests {
         ];
         // jump away leaves the initial instruction
         assert_eq!(
-            Program::new(&prog).exec_without_io(Some(0), None),
+            Program::new(&prog).exec_without_io(Some(0), None).unwrap(),
             JUMP_F + P1_IMMEDIATE + P2_IMMEDIATE
         );
         // no jump overwrites the initial instruciton with 3 + 7 = 10
-        assert_eq!(Program::new(&prog).exec_without_io(Some(1), None), 10);
+        assert_eq!(
+            Program::new(&prog).exec_without_io(Some(1), None).unwrap(),
+            10
+        );
     }
 
     #[test]
     fn test_less_then() {
         let prog = [LESS_THEN + P1_IMMEDIATE + P2_IMMEDIATE, -1, -1, 0, END];
         // 3 < 4 = true -> we store 1 in pos 0
-        assert_eq!(Program::new(&prog).exec_without_io(Some(3), Some(4)), 1);
+        assert_eq!(
+            Program::new(&prog).exec_without_io(Some(3), Some(4)).unwrap(),
+            1
+        );
         // 5 < 4 = false -> we store 0 in pos 0
-        assert_eq!(Program::new(&prog).exec_without_io(Some(5), Some(4)), 0);
+        assert_eq!(
+            Program::new(&prog).exec_without_io(Some(5), Some(4)).unwrap(),
+            0
+        );
     }
 
     #[test]
     fn test_equals() {
         let prog = [EQUAL + P1_IMMEDIATE + P2_IMMEDIATE, -1, -10, 0, END];
         // 3 == 3 = true -> we store 1 in pos 0
-        assert_eq!(Program::new(&prog).exec_without_io(Some(3), Some(3)), 1);
+        assert_eq!(
+            Program::new(&prog).exec_without_io(Some(3), Some(3)).unwrap(),
+            1
+        );
         // 5 == 4 = false -> we store 0 in pos 0
-        assert_eq!(Program::new(&prog).exec_without_io(Some(5), Some(4)), 0);
+        assert_eq!(
+            Program::new(&prog).exec_without_io(Some(5), Some(4)).unwrap(),
+            0
+        );
     }
 }

@@ -1,5 +1,3 @@
-use std::collections::VecDeque;
-
 use anyhow::Result;
 use aoc19::intcode::Program;
 use itertools::Itertools;
@@ -39,15 +37,15 @@ fn part02(amp_p: &Program) {
 
 fn run_amp_chain(amp: &Program, phases: &[i32]) -> i32 {
     let mut signal = 0;
-    let mut io_buffer = VecDeque::new();
     for phase in phases {
-        io_buffer.clear();
-        io_buffer.push_back(*phase);
-        io_buffer.push_back(signal);
+        let mut amp = amp.clone();
+        amp.feed_input(*phase);
+        amp.feed_input(signal);
 
-        amp.clone().exec_without_verb_noun(&mut io_buffer);
-        signal = io_buffer
-            .pop_front()
+        amp.exec_without_verb_noun()
+            .expect("Expected exec to run to completion.");
+        signal = amp
+            .read_output()
             .expect("Last output should have left a value.");
     }
     signal
