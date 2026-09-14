@@ -1,6 +1,7 @@
 use std::collections::VecDeque;
 
 type Address = usize;
+type Word = i32;
 
 enum Parameter {
     Position(Address),
