@@ -9,7 +9,7 @@ enum Parameter {
     Immediate(Word),
 }
 
-enum StepResult<'a> {
+pub enum StepResult<'a> {
     Stopped(Word),
     InstructionProcessed,
     AwaitingInput(&'a mut VecDeque<Word>),
@@ -91,7 +91,7 @@ impl Program {
         }
     }
 
-    fn step(&mut self) -> StepResult {
+    pub fn step(&mut self) -> StepResult {
         let op = self.read_instruction();
         match op {
             Instruction::Add(p1, p2, target) => {
@@ -339,12 +339,16 @@ mod tests {
         let prog = [LESS_THEN + P1_IMMEDIATE + P2_IMMEDIATE, -1, -1, 0, END];
         // 3 < 4 = true -> we store 1 in pos 0
         assert_eq!(
-            Program::new(&prog).exec_without_io(Some(3), Some(4)).unwrap(),
+            Program::new(&prog)
+                .exec_without_io(Some(3), Some(4))
+                .unwrap(),
             1
         );
         // 5 < 4 = false -> we store 0 in pos 0
         assert_eq!(
-            Program::new(&prog).exec_without_io(Some(5), Some(4)).unwrap(),
+            Program::new(&prog)
+                .exec_without_io(Some(5), Some(4))
+                .unwrap(),
             0
         );
     }
@@ -354,12 +358,16 @@ mod tests {
         let prog = [EQUAL + P1_IMMEDIATE + P2_IMMEDIATE, -1, -10, 0, END];
         // 3 == 3 = true -> we store 1 in pos 0
         assert_eq!(
-            Program::new(&prog).exec_without_io(Some(3), Some(3)).unwrap(),
+            Program::new(&prog)
+                .exec_without_io(Some(3), Some(3))
+                .unwrap(),
             1
         );
         // 5 == 4 = false -> we store 0 in pos 0
         assert_eq!(
-            Program::new(&prog).exec_without_io(Some(5), Some(4)).unwrap(),
+            Program::new(&prog)
+                .exec_without_io(Some(5), Some(4))
+                .unwrap(),
             0
         );
     }

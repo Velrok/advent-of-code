@@ -24,7 +24,11 @@ fn part01(amp_p: &Program) {
 }
 
 fn part02(amp_p: &Program) {
-    let problem_space: Vec<Vec<i32>> = LOOPING_PHASES.iter().copied().permutations(5).collect();
+    let problem_space: Vec<Vec<i32>> = LOOPING_PHASES
+        .iter()
+        .copied()
+        .combinations_with_replacement(5)
+        .collect();
     // let result = run_amp_chain(&amp_p, phases);
     // dbg!(result);
     let max_thrust = problem_space
@@ -36,17 +40,42 @@ fn part02(amp_p: &Program) {
 }
 
 fn run_amp_chain(amp: &Program, phases: &[i32]) -> i32 {
-    let mut signal = 0;
-    for phase in phases {
-        let mut amp = amp.clone();
-        amp.feed_input(*phase);
-        amp.feed_input(signal);
+    let mut amps: Vec<_> = phases
+        .iter()
+        .map(|phase| {
+            let mut copy = amp.clone();
+            copy.feed_input(*phase);
+            copy
+        })
+        .collect();
+    amps[0].feed_input(0);
+    let amps_count = amps.len();
+    let mut curr_amp_idx = 0;
+    loop {
+        let next_idx = (curr_amp_idx + 1) % amps_count;
+        let (amp, next_amp): (&mut Program, &mut Program) = if next_idx > curr_amp_idx {
+            // [a b] [c d]
+            //    ^   ^
+            //    C   N
+            let (left, right) = amps.split_at_mut(next_idx);
+            (left.last_mut().unwrap(), right.first_mut().unwrap())
+        } else {
+            // [a b c] [d]
+            //  ^       ^
+            //  N      C
+            let (left, right) = amps.split_at_mut(curr_amp_idx);
+            (left.first_mut().unwrap(), right.first_mut().unwrap())
+        };
 
-        amp.exec_without_verb_noun()
-            .expect("Expected exec to run to completion.");
-        signal = amp
-            .read_output()
-            .expect("Last output should have left a value.");
+        match amp.step() {
+            aoc19::intcode::StepResult::Stopped(val) => return val,
+            aoc19::intcode::StepResult::InstructionProcessed => {}
+            aoc19::intcode::StepResult::AwaitingInput(_) => {
+                while let Some(val) = amp.read_output() {
+                    next_amp.feed_input(val)
+                }
+                curr_amp_idx = next_idx;
+            }
+        };
     }
-    signal
 }
