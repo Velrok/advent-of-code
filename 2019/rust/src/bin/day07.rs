@@ -1,7 +1,6 @@
 use anyhow::Result;
 use aoc19::intcode::Program;
 use itertools::Itertools;
-use rayon::prelude::*;
 
 const PHASES: [i32; 5] = [0, 1, 2, 3, 4];
 const LOOPING_PHASES: [i32; 5] = [5, 6, 7, 8, 9];
@@ -16,7 +15,7 @@ fn main() -> Result<()> {
 fn part01(amp_p: &Program) {
     let problem_space: Vec<Vec<i32>> = PHASES.iter().copied().permutations(5).collect();
     let max_thrust = problem_space
-        .par_iter()
+        .iter()
         .map(|phases| run_amp_chain(amp_p, phases).expect("Expected chain to run to completion."))
         .max()
         .expect("Expected to get results.");
@@ -24,20 +23,20 @@ fn part01(amp_p: &Program) {
 }
 
 fn part02(amp_p: &Program) {
-    let problem_space: Vec<Vec<i32>> = LOOPING_PHASES
+    let problem_space: Vec<Vec<i32>> = LOOPING_PHASES.iter().copied().permutations(5).collect();
+
+    let thrusts: Vec<_> = problem_space
         .iter()
-        .copied()
-        .combinations_with_replacement(5)
-        .collect();
-    let max_thrust = problem_space
-        .par_iter()
         .map(|phases| run_amp_chain(amp_p, phases).expect("Expected chain to run to completion."))
-        .max()
-        .expect("Expected to get results.");
-    println!("part 2 | max_thrust: {max_thrust}");
+        .collect();
+
+    let max_thrust = thrusts.iter().max().expect("Expected to get results.");
+    println!("part 2 | thrusts: {thrusts:?} MAX: {max_thrust}");
 }
 
 fn run_amp_chain(amp: &Program, phases: &[i32]) -> Result<i32> {
+    #[cfg(debug_assertions)]
+    println!("=== Amp chain: {phases:?} ===");
     let mut amps: Vec<_> = phases
         .iter()
         .map(|phase| {
@@ -49,28 +48,43 @@ fn run_amp_chain(amp: &Program, phases: &[i32]) -> Result<i32> {
     amps[0].feed_input(0);
     let amps_count = amps.len();
     let mut curr_amp_idx = 0;
+
+    let inputs: Vec<_> = amps.iter().map(|amp| amp.inputs_copy()).collect();
+
+    #[cfg(debug_assertions)]
+    println!("  Inputs: {inputs:?}");
+
     loop {
         let next_idx = (curr_amp_idx + 1) % amps_count;
-        let (amp, next_amp): (&mut Program, &mut Program) = if next_idx > curr_amp_idx {
-            // [a b] [c d]
-            //    ^   ^
-            //    C   N
-            let (left, right) = amps.split_at_mut(next_idx);
-            (left.last_mut().unwrap(), right.first_mut().unwrap())
-        } else {
-            // [a b c] [d]
-            //  ^       ^
-            //  N      C
-            let (left, right) = amps.split_at_mut(curr_amp_idx);
-            (left.first_mut().unwrap(), right.first_mut().unwrap())
-        };
+        if curr_amp_idx == next_idx {
+            anyhow::bail!("Index math is wrong! We expect at least two amps.");
+        }
+        let amp = amps.get_mut(curr_amp_idx).expect("Current Amp.");
 
         match amp.step()? {
-            aoc19::intcode::StepResult::Stopped(val) => return Ok(val),
-            aoc19::intcode::StepResult::InstructionProcessed => {}
+            aoc19::intcode::StepResult::Stopped(_) => {
+                if amps.iter().all(|amp| amp.stopped()) {
+                    let amp_e = amps.last_mut().expect("Last amp exists.");
+
+                    #[cfg(debug_assertions)]
+                    println!("<< All stopped >>");
+
+                    return Ok(amp_e
+                        .read_last_output()
+                        .expect("Amp E still has the last output"));
+                }
+                curr_amp_idx = next_idx;
+            }
+            aoc19::intcode::StepResult::InstructionProcessed => {
+                #[cfg(debug_assertions)]
+                print!(".");
+            }
             aoc19::intcode::StepResult::OutputWritten(out) => {
-                next_amp.feed_input(out);
-                curr_amp_idx += 1
+                #[cfg(debug_assertions)]
+                println!("  Amp[{curr_amp_idx}] -|{out}|-> Amp[{next_idx}]");
+
+                amps.get_mut(next_idx).expect("Next Amp.").feed_input(out);
+                curr_amp_idx = next_idx;
             }
         };
     }

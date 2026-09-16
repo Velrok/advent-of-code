@@ -30,6 +30,7 @@ enum Instruction {
 #[derive(Clone)]
 pub struct Program {
     memory: Vec<Word>,
+    stopped: bool,
     instruction_pointer: Address,
     inputs: VecDeque<Word>,
     outputs: VecDeque<Word>,
@@ -39,6 +40,7 @@ impl Program {
     pub fn new(data: &[Word]) -> Self {
         Self {
             memory: data.to_vec(),
+            stopped: false,
             instruction_pointer: 0,
             inputs: VecDeque::new(),
             outputs: VecDeque::new(),
@@ -66,8 +68,16 @@ impl Program {
         self.inputs.push_back(val)
     }
 
+    pub fn inputs_copy(&self) -> Vec<Word> {
+        self.inputs.clone().into()
+    }
+
     pub fn read_output(&mut self) -> Option<Word> {
         self.outputs.pop_front()
+    }
+
+    pub fn read_last_output(&mut self) -> Option<Word> {
+        self.outputs.pop_back()
     }
 
     pub fn exec(&mut self, noun: Option<Word>, verb: Option<Word>) -> anyhow::Result<Word> {
@@ -102,7 +112,10 @@ impl Program {
                 self.instruction_pointer += 4;
                 StepResult::InstructionProcessed
             }
-            Instruction::End => StepResult::Stopped(self.memory[0]),
+            Instruction::End => {
+                self.stopped = true;
+                StepResult::Stopped(self.memory[0])
+            }
             Instruction::Input(target_addr) => match self.inputs.pop_front() {
                 Some(val) => {
                     self.memory[target_addr] = val;
@@ -204,6 +217,10 @@ impl Program {
             1 => Parameter::Immediate(self.memory[self.instruction_pointer + number as usize]),
             _ => unreachable!("We are only fed valid programs."),
         }
+    }
+
+    pub fn stopped(&self) -> bool {
+        self.stopped
     }
 }
 
