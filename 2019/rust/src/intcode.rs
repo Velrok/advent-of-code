@@ -9,10 +9,10 @@ enum Parameter {
     Immediate(Word),
 }
 
-pub enum StepResult<'a> {
+pub enum StepResult {
     Stopped(Word),
     InstructionProcessed,
-    AwaitingInput(&'a mut VecDeque<Word>),
+    OutputWritten(Word),
 }
 
 enum Instruction {
@@ -79,21 +79,15 @@ impl Program {
         };
 
         loop {
-            match self.step() {
-                StepResult::Stopped(val) => {
-                    return Ok(val);
-                }
-                StepResult::InstructionProcessed => {}
-                StepResult::AwaitingInput(_) => {
-                    anyhow::bail!("Expected more inputs. Use step if you need to pause mid exec.");
-                }
+            if let StepResult::Stopped(val) = self.step()? {
+                return Ok(val);
             }
         }
     }
 
-    pub fn step(&mut self) -> StepResult {
+    pub fn step(&mut self) -> Result<StepResult> {
         let op = self.read_instruction();
-        match op {
+        Ok(match op {
             Instruction::Add(p1, p2, target) => {
                 let x = self.param_value(p1);
                 let y = self.param_value(p2);
@@ -115,13 +109,13 @@ impl Program {
                     self.instruction_pointer += 2;
                     StepResult::InstructionProcessed
                 }
-                None => StepResult::AwaitingInput(&mut self.inputs),
+                None => anyhow::bail!("Expected more inputs, but got None."),
             },
             Instruction::Output(read_addr) => {
                 let val = self.memory[read_addr];
                 self.instruction_pointer += 2;
                 self.outputs.push_back(val);
-                StepResult::InstructionProcessed
+                StepResult::OutputWritten(val)
             }
             Instruction::JumpIfTrue(param1, param2) => {
                 if self.param_value(param1) > 0 {
@@ -159,7 +153,7 @@ impl Program {
                 self.instruction_pointer += 4;
                 StepResult::InstructionProcessed
             }
-        }
+        })
     }
 
     fn param_value(&self, param: Parameter) -> i32 {

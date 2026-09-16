@@ -17,7 +17,7 @@ fn part01(amp_p: &Program) {
     let problem_space: Vec<Vec<i32>> = PHASES.iter().copied().permutations(5).collect();
     let max_thrust = problem_space
         .par_iter()
-        .map(|phases| run_amp_chain(amp_p, phases))
+        .map(|phases| run_amp_chain(amp_p, phases).expect("Expected chain to run to completion."))
         .max()
         .expect("Expected to get results.");
     println!("part 1 | max_thrust: {max_thrust}");
@@ -29,17 +29,15 @@ fn part02(amp_p: &Program) {
         .copied()
         .combinations_with_replacement(5)
         .collect();
-    // let result = run_amp_chain(&amp_p, phases);
-    // dbg!(result);
     let max_thrust = problem_space
         .par_iter()
-        .map(|phases| run_amp_chain(amp_p, phases))
+        .map(|phases| run_amp_chain(amp_p, phases).expect("Expected chain to run to completion."))
         .max()
         .expect("Expected to get results.");
     println!("part 2 | max_thrust: {max_thrust}");
 }
 
-fn run_amp_chain(amp: &Program, phases: &[i32]) -> i32 {
+fn run_amp_chain(amp: &Program, phases: &[i32]) -> Result<i32> {
     let mut amps: Vec<_> = phases
         .iter()
         .map(|phase| {
@@ -67,14 +65,12 @@ fn run_amp_chain(amp: &Program, phases: &[i32]) -> i32 {
             (left.first_mut().unwrap(), right.first_mut().unwrap())
         };
 
-        match amp.step() {
-            aoc19::intcode::StepResult::Stopped(val) => return val,
+        match amp.step()? {
+            aoc19::intcode::StepResult::Stopped(val) => return Ok(val),
             aoc19::intcode::StepResult::InstructionProcessed => {}
-            aoc19::intcode::StepResult::AwaitingInput(_) => {
-                while let Some(val) = amp.read_output() {
-                    next_amp.feed_input(val)
-                }
-                curr_amp_idx = next_idx;
+            aoc19::intcode::StepResult::OutputWritten(out) => {
+                next_amp.feed_input(out);
+                curr_amp_idx += 1
             }
         };
     }
