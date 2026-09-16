@@ -9,6 +9,10 @@ itertools = "0.15.0"
 rayon = "1.12.0"
 
 [[bin]]
+name = "intcode-vm"
+path = "src/bin/int_vm.rs"
+
+[[bin]]
 name = "day01"
 path = "src/bin/day01.rs"
 
