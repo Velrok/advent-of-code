@@ -4,7 +4,9 @@ use std::collections::VecDeque;
 type Address = usize;
 type Word = i64;
 
+#[derive(PartialEq, Debug)]
 enum Parameter {
+    Relative(Word),
     Position(Address),
     Immediate(Word),
 }
@@ -24,6 +26,7 @@ enum Instruction {
     JumpIfFalse(Parameter, Parameter),
     LessThen(Parameter, Parameter, Address),
     Equals(Parameter, Parameter, Address),
+    AdjustRelativeBase(Parameter),
     End,
 }
 
@@ -34,12 +37,14 @@ pub struct Program {
     instruction_pointer: Address,
     inputs: VecDeque<Word>,
     outputs: VecDeque<Word>,
+    relative_base: Word,
 }
 
 impl Program {
     pub fn new(data: &[Word]) -> Self {
         Self {
             memory: data.to_vec(),
+            relative_base: 0,
             stopped: false,
             instruction_pointer: 0,
             inputs: VecDeque::new(),
@@ -101,14 +106,14 @@ impl Program {
             Instruction::Add(p1, p2, target) => {
                 let x = self.param_value(p1);
                 let y = self.param_value(p2);
-                self.memory[target] = x + y;
+                self.set_mem(target, x + y);
                 self.instruction_pointer += 4;
                 StepResult::InstructionProcessed
             }
             Instruction::Mult(p1, p2, target_addr) => {
                 let x = self.param_value(p1);
                 let y = self.param_value(p2);
-                self.memory[target_addr] = x * y;
+                self.set_mem(target_addr, x * y);
                 self.instruction_pointer += 4;
                 StepResult::InstructionProcessed
             }
@@ -118,7 +123,7 @@ impl Program {
             }
             Instruction::Input(target_addr) => match self.inputs.pop_front() {
                 Some(val) => {
-                    self.memory[target_addr] = val;
+                    self.set_mem(target_addr, val);
                     self.instruction_pointer += 2;
                     StepResult::InstructionProcessed
                 }
@@ -152,8 +157,14 @@ impl Program {
                 } else {
                     0
                 };
-                self.memory[target_addr] = result;
+                self.set_mem(target_addr, result);
                 self.instruction_pointer += 4;
+                StepResult::InstructionProcessed
+            }
+            Instruction::AdjustRelativeBase(param1) => {
+                let diff = self.param_value(param1);
+                self.relative_base += diff;
+                self.instruction_pointer += 2;
                 StepResult::InstructionProcessed
             }
             Instruction::Equals(param1, param2, target_addr) => {
@@ -162,16 +173,28 @@ impl Program {
                 } else {
                     0
                 };
-                self.memory[target_addr] = result;
+                self.set_mem(target_addr, result);
                 self.instruction_pointer += 4;
                 StepResult::InstructionProcessed
             }
         })
     }
 
+    fn set_mem(&mut self, addr: Address, val: Word) {
+        if addr >= self.memory.len() {
+            self.memory.resize(addr + 1, 0);
+        }
+        self.memory[addr] = val;
+    }
+
     fn param_value(&self, param: Parameter) -> Word {
         match param {
             Parameter::Position(addr) => self.memory[addr],
+            Parameter::Relative(offset) => {
+                let addr = usize::try_from(self.relative_base + offset)
+                    .expect("Programms say within the memory space and dont go negative.");
+                self.memory[addr]
+            }
             Parameter::Immediate(val) => val,
         }
     }
@@ -203,6 +226,7 @@ impl Program {
                 self.read_param(2),
                 self.memory[self.instruction_pointer + 3] as usize,
             ),
+            9 => Instruction::AdjustRelativeBase(self.read_param(1)),
             99 => Instruction::End,
             _ => unreachable!("We are only fed valid programs."),
         }
@@ -210,11 +234,14 @@ impl Program {
 
     fn read_param(&self, number: u32) -> Parameter {
         let modifier = (self.memory[self.instruction_pointer] / (10 as Word).pow(1 + number)) % 10;
+        let param_val = self.memory[self.instruction_pointer + number as usize];
         match modifier {
             0 => Parameter::Position(
-                self.memory[self.instruction_pointer + number as usize] as usize,
+                Address::try_from(param_val)
+                    .expect("Position parameter points to a valid Address in memory."),
             ),
-            1 => Parameter::Immediate(self.memory[self.instruction_pointer + number as usize]),
+            1 => Parameter::Immediate(param_val),
+            2 => Parameter::Relative(param_val),
             _ => unreachable!("We are only fed valid programs."),
         }
     }
@@ -237,6 +264,33 @@ mod tests {
     const LESS_THEN: Word = 7;
     const EQUAL: Word = 8;
     const END: Word = 99;
+
+    const P1_IMMEDIATE: Word = 100;
+    const P2_IMMEDIATE: Word = 1000;
+
+    const P1_RELATIVE: Word = 200;
+    const P2_RELATIVE: Word = 2000;
+
+    #[test]
+    fn test_read_position_param() {
+        let vm = Program::new(&[ADD, 5, 6, 0, END, 1, 2]);
+        assert_eq!(vm.read_param(1), Parameter::Position(5));
+        assert_eq!(vm.read_param(2), Parameter::Position(6));
+    }
+
+    #[test]
+    fn test_read_immediate_param() {
+        let vm = Program::new(&[ADD + P1_IMMEDIATE + P2_IMMEDIATE, 5, 6, 0, END]);
+        assert_eq!(vm.read_param(1), Parameter::Immediate(5));
+        assert_eq!(vm.read_param(2), Parameter::Immediate(6));
+    }
+
+    #[test]
+    fn test_read_relative_param() {
+        let vm = Program::new(&[ADD + P1_RELATIVE + P2_RELATIVE, -1, 3, 0, END]);
+        assert_eq!(vm.read_param(1), Parameter::Relative(-1));
+        assert_eq!(vm.read_param(2), Parameter::Relative(3));
+    }
 
     const ADD_PROG: [Word; 7] = [ADD, 5, 6, 0, END, 2, 3];
     const MULT_PROG: [Word; 7] = [MULT, 5, 6, 0, END, 2, 3];
@@ -262,8 +316,6 @@ mod tests {
     }
 
     // Immediate mode
-    const P1_IMMEDIATE: Word = 100;
-    const P2_IMMEDIATE: Word = 1000;
     const ADD_PROG_IMMEDIAT_MODE: [Word; 5] = [ADD + P1_IMMEDIATE + P2_IMMEDIATE, 5, 6, 0, END];
     const MULT_PROG_IMMEDIAT_MODE: [Word; 5] = [MULT + P1_IMMEDIATE + P2_IMMEDIATE, 5, 6, 0, END];
 
