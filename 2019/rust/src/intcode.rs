@@ -2,7 +2,7 @@ use anyhow::Result;
 use std::collections::VecDeque;
 
 type Address = usize;
-type Word = i32;
+type Word = i64;
 
 enum Parameter {
     Position(Address),
@@ -51,7 +51,7 @@ impl Program {
         let data: Vec<Word> = std::fs::read_to_string(filename)?
             .trim_end()
             .split(',')
-            .map(|c| c.parse::<i32>().expect("Program is made up of integers."))
+            .map(|c| c.parse::<Word>().expect("Program is made up of integers."))
             .collect();
         Ok(Self::new(&data))
     }
@@ -169,7 +169,7 @@ impl Program {
         })
     }
 
-    fn param_value(&self, param: Parameter) -> i32 {
+    fn param_value(&self, param: Parameter) -> Word {
         match param {
             Parameter::Position(addr) => self.memory[addr],
             Parameter::Immediate(val) => val,
@@ -209,7 +209,7 @@ impl Program {
     }
 
     fn read_param(&self, number: u32) -> Parameter {
-        let modifier = (self.memory[self.instruction_pointer] / 10i32.pow(1 + number)) % 10;
+        let modifier = (self.memory[self.instruction_pointer] / (10 as Word).pow(1 + number)) % 10;
         match modifier {
             0 => Parameter::Position(
                 self.memory[self.instruction_pointer + number as usize] as usize,
@@ -228,18 +228,18 @@ impl Program {
 mod tests {
     use super::*;
 
-    const ADD: i32 = 1;
-    const MULT: i32 = 2;
-    const INP: i32 = 3;
-    const OUTP: i32 = 4;
-    const JUMP_T: i32 = 5;
-    const JUMP_F: i32 = 6;
-    const LESS_THEN: i32 = 7;
-    const EQUAL: i32 = 8;
-    const END: i32 = 99;
+    const ADD: Word = 1;
+    const MULT: Word = 2;
+    const INP: Word = 3;
+    const OUTP: Word = 4;
+    const JUMP_T: Word = 5;
+    const JUMP_F: Word = 6;
+    const LESS_THEN: Word = 7;
+    const EQUAL: Word = 8;
+    const END: Word = 99;
 
-    const ADD_PROG: [i32; 7] = [ADD, 5, 6, 0, END, 2, 3];
-    const MULT_PROG: [i32; 7] = [MULT, 5, 6, 0, END, 2, 3];
+    const ADD_PROG: [Word; 7] = [ADD, 5, 6, 0, END, 2, 3];
+    const MULT_PROG: [Word; 7] = [MULT, 5, 6, 0, END, 2, 3];
 
     #[test]
     fn test_add_pos_mode() {
@@ -262,10 +262,10 @@ mod tests {
     }
 
     // Immediate mode
-    const P1_IMMEDIATE: i32 = 100;
-    const P2_IMMEDIATE: i32 = 1000;
-    const ADD_PROG_IMMEDIAT_MODE: [i32; 5] = [ADD + P1_IMMEDIATE + P2_IMMEDIATE, 5, 6, 0, END];
-    const MULT_PROG_IMMEDIAT_MODE: [i32; 5] = [MULT + P1_IMMEDIATE + P2_IMMEDIATE, 5, 6, 0, END];
+    const P1_IMMEDIATE: Word = 100;
+    const P2_IMMEDIATE: Word = 1000;
+    const ADD_PROG_IMMEDIAT_MODE: [Word; 5] = [ADD + P1_IMMEDIATE + P2_IMMEDIATE, 5, 6, 0, END];
+    const MULT_PROG_IMMEDIAT_MODE: [Word; 5] = [MULT + P1_IMMEDIATE + P2_IMMEDIATE, 5, 6, 0, END];
 
     #[test]
     fn test_add_immediate_mode() {
@@ -287,7 +287,7 @@ mod tests {
         );
     }
 
-    const IO_PROG: [i32; 6] = [INP, 5, OUTP, 5, END, -2];
+    const IO_PROG: [Word; 6] = [INP, 5, OUTP, 5, END, -2];
 
     #[test]
     fn test_io() {

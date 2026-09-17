@@ -2,8 +2,8 @@ use anyhow::Result;
 use aoc19::intcode::Program;
 use itertools::Itertools;
 
-const PHASES: [i32; 5] = [0, 1, 2, 3, 4];
-const LOOPING_PHASES: [i32; 5] = [5, 6, 7, 8, 9];
+const PHASES: [i64; 5] = [0, 1, 2, 3, 4];
+const LOOPING_PHASES: [i64; 5] = [5, 6, 7, 8, 9];
 
 fn main() -> Result<()> {
     let amp_p = Program::from_file(std::path::Path::new("inputs/day07.txt"))?;
@@ -13,7 +13,7 @@ fn main() -> Result<()> {
 }
 
 fn part01(amp_p: &Program) {
-    let problem_space: Vec<Vec<i32>> = PHASES.iter().copied().permutations(5).collect();
+    let problem_space: Vec<Vec<i64>> = PHASES.iter().copied().permutations(5).collect();
     let max_thrust = problem_space
         .iter()
         .map(|phases| run_amp_chain(amp_p, phases).expect("Expected chain to run to completion."))
@@ -23,7 +23,7 @@ fn part01(amp_p: &Program) {
 }
 
 fn part02(amp_p: &Program) {
-    let problem_space: Vec<Vec<i32>> = LOOPING_PHASES.iter().copied().permutations(5).collect();
+    let problem_space: Vec<Vec<i64>> = LOOPING_PHASES.iter().copied().permutations(5).collect();
 
     let thrusts: Vec<_> = problem_space
         .iter()
@@ -34,7 +34,7 @@ fn part02(amp_p: &Program) {
     println!("part 2 | thrusts: {thrusts:?} MAX: {max_thrust}");
 }
 
-fn run_amp_chain(amp: &Program, phases: &[i32]) -> Result<i32> {
+fn run_amp_chain(amp: &Program, phases: &[i64]) -> Result<i64> {
     #[cfg(debug_assertions)]
     println!("=== Amp chain: {phases:?} ===");
     let mut amps: Vec<_> = phases

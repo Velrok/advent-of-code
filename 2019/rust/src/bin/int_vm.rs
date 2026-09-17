@@ -1,6 +1,6 @@
 use anyhow::Result;
 use aoc19::intcode::Program;
-use std::{fs, io::Read};
+use std::io::Read;
 
 fn main() -> Result<()> {
     let args: Vec<_> = std::env::args().collect();
@@ -21,7 +21,7 @@ fn main() -> Result<()> {
         .trim()
         .split([',', ' ', '\n'])
         .filter(|s| !s.is_empty())
-        .map(|s| s.parse::<i32>().expect("Inputs to be i32 numbers."))
+        .map(|s| s.parse::<i64>().expect("Inputs to be i64 numbers."))
         .collect();
 
     for input in inputs {
