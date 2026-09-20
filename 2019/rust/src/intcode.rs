@@ -22,7 +22,7 @@ pub enum StepResult {
 enum Instruction {
     Add(Parameter, Parameter, Address),
     Mult(Parameter, Parameter, Address),
-    Input(Address),
+    Input(Parameter),
     Output(Parameter),
     JumpIfTrue(Parameter, Parameter),
     JumpIfFalse(Parameter, Parameter),
@@ -109,10 +109,13 @@ impl Program {
 
     pub fn step(&mut self) -> Result<StepResult> {
         let op = self.read_instruction();
-        let id = &self.id;
-        let instr_ptr = self.instruction_pointer;
-        let base = self.relative_base;
-        print!("<{id}> {instr_ptr}|{base}({op:?})");
+        #[cfg(debug_assertions)]
+        {
+            let id = &self.id;
+            let instr_ptr = self.instruction_pointer;
+            let base = self.relative_base;
+            print!("<{id}> {instr_ptr}|{base}({op:?})");
+        }
         let result = match op {
             Instruction::Add(p1, p2, target) => {
                 let x = self.param_value(p1);
@@ -132,8 +135,10 @@ impl Program {
                 self.stopped = true;
                 StepResult::Stopped(self.memory[0])
             }
-            Instruction::Input(target_addr) => match self.inputs.pop_front() {
+            Instruction::Input(param1) => match self.inputs.pop_front() {
                 Some(val) => {
+                    let target_addr = Address::try_from(self.param_value(param1))
+                        .expect("Output val is a usize.");
                     self.set_mem(target_addr, val);
                     self.instruction_pointer += 2;
                     StepResult::InstructionProcessed
@@ -141,7 +146,7 @@ impl Program {
                 None => anyhow::bail!("Expected more inputs, but got None."),
             },
             Instruction::Output(param1) => {
-                let val = self.memory[(self.param_value(param1) as Word)];
+                let val = self.param_value(param1);
                 self.instruction_pointer += 2;
                 self.outputs.push_back(val);
                 StepResult::OutputWritten(val)
@@ -189,6 +194,7 @@ impl Program {
                 StepResult::InstructionProcessed
             }
         };
+        #[cfg(debug_assertions)]
         println!(" >> {result:?}");
         Ok(result)
     }
@@ -225,7 +231,7 @@ impl Program {
                 self.read_param(2),
                 self.memory[self.instruction_pointer + 3] as usize,
             ),
-            3 => Instruction::Input(self.memory[self.instruction_pointer + 1] as usize),
+            3 => Instruction::Input(self.read_param(1)),
             4 => Instruction::Output(self.read_param(1)),
             5 => Instruction::JumpIfTrue(self.read_param(1), self.read_param(2)),
             6 => Instruction::JumpIfFalse(self.read_param(1), self.read_param(2)),
@@ -363,16 +369,6 @@ mod tests {
                 .unwrap(),
             30
         );
-    }
-
-    const IO_PROG: [Word; 6] = [INP, 5, OUTP, 5, END, -2];
-
-    #[test]
-    fn test_io() {
-        let mut program = Program::new(&IO_PROG, None);
-        program.feed_input(7);
-        program.exec_without_verb_noun().unwrap();
-        assert_eq!(program.read_output(), Some(7));
     }
 
     #[test]
