@@ -11,17 +11,19 @@ enum Parameter {
     Immediate(Word),
 }
 
+#[derive(PartialEq, Debug)]
 pub enum StepResult {
     Stopped(Word),
     InstructionProcessed,
     OutputWritten(Word),
 }
 
+#[derive(Debug)]
 enum Instruction {
     Add(Parameter, Parameter, Address),
     Mult(Parameter, Parameter, Address),
     Input(Address),
-    Output(Address),
+    Output(Parameter),
     JumpIfTrue(Parameter, Parameter),
     JumpIfFalse(Parameter, Parameter),
     LessThen(Parameter, Parameter, Address),
@@ -32,6 +34,7 @@ enum Instruction {
 
 #[derive(Clone)]
 pub struct Program {
+    id: String,
     memory: Vec<Word>,
     stopped: bool,
     instruction_pointer: Address,
@@ -41,8 +44,12 @@ pub struct Program {
 }
 
 impl Program {
-    pub fn new(data: &[Word]) -> Self {
+    pub fn new(data: &[Word], id: Option<&str>) -> Self {
         Self {
+            id: id.map(str::to_owned).unwrap_or_else(|| {
+                let id: u8 = rand::random();
+                format!("{id:02x}")
+            }),
             memory: data.to_vec(),
             relative_base: 0,
             stopped: false,
@@ -58,7 +65,7 @@ impl Program {
             .split(',')
             .map(|c| c.parse::<Word>().expect("Program is made up of integers."))
             .collect();
-        Ok(Self::new(&data))
+        Ok(Self::new(&data, None))
     }
 
     pub fn exec_without_io(&mut self, noun: Option<Word>, verb: Option<Word>) -> Result<Word> {
@@ -102,7 +109,11 @@ impl Program {
 
     pub fn step(&mut self) -> Result<StepResult> {
         let op = self.read_instruction();
-        Ok(match op {
+        let id = &self.id;
+        let instr_ptr = self.instruction_pointer;
+        let base = self.relative_base;
+        print!("<{id}> {instr_ptr}|{base}({op:?})");
+        let result = match op {
             Instruction::Add(p1, p2, target) => {
                 let x = self.param_value(p1);
                 let y = self.param_value(p2);
@@ -129,8 +140,8 @@ impl Program {
                 }
                 None => anyhow::bail!("Expected more inputs, but got None."),
             },
-            Instruction::Output(read_addr) => {
-                let val = self.memory[read_addr];
+            Instruction::Output(param1) => {
+                let val = self.memory[(self.param_value(param1) as Word)];
                 self.instruction_pointer += 2;
                 self.outputs.push_back(val);
                 StepResult::OutputWritten(val)
@@ -177,7 +188,9 @@ impl Program {
                 self.instruction_pointer += 4;
                 StepResult::InstructionProcessed
             }
-        })
+        };
+        println!(" >> {result:?}");
+        Ok(result)
     }
 
     fn set_mem(&mut self, addr: Address, val: Word) {
@@ -213,7 +226,7 @@ impl Program {
                 self.memory[self.instruction_pointer + 3] as usize,
             ),
             3 => Instruction::Input(self.memory[self.instruction_pointer + 1] as usize),
-            4 => Instruction::Output(self.memory[self.instruction_pointer + 1] as usize),
+            4 => Instruction::Output(self.read_param(1)),
             5 => Instruction::JumpIfTrue(self.read_param(1), self.read_param(2)),
             6 => Instruction::JumpIfFalse(self.read_param(1), self.read_param(2)),
             7 => Instruction::LessThen(
@@ -263,6 +276,7 @@ mod tests {
     const JUMP_F: Word = 6;
     const LESS_THEN: Word = 7;
     const EQUAL: Word = 8;
+    const ADJ_REL_BASE: Word = 9;
     const END: Word = 99;
 
     const P1_IMMEDIATE: Word = 100;
@@ -273,23 +287,35 @@ mod tests {
 
     #[test]
     fn test_read_position_param() {
-        let vm = Program::new(&[ADD, 5, 6, 0, END, 1, 2]);
+        let vm = Program::new(&[ADD, 5, 6, 0, END, 1, 2], None);
         assert_eq!(vm.read_param(1), Parameter::Position(5));
         assert_eq!(vm.read_param(2), Parameter::Position(6));
     }
 
     #[test]
     fn test_read_immediate_param() {
-        let vm = Program::new(&[ADD + P1_IMMEDIATE + P2_IMMEDIATE, 5, 6, 0, END]);
+        let vm = Program::new(&[ADD + P1_IMMEDIATE + P2_IMMEDIATE, 5, 6, 0, END], None);
         assert_eq!(vm.read_param(1), Parameter::Immediate(5));
         assert_eq!(vm.read_param(2), Parameter::Immediate(6));
     }
 
     #[test]
     fn test_read_relative_param() {
-        let vm = Program::new(&[ADD + P1_RELATIVE + P2_RELATIVE, -1, 3, 0, END]);
+        let vm = Program::new(&[ADD + P1_RELATIVE + P2_RELATIVE, -1, 3, 0, END], None);
         assert_eq!(vm.read_param(1), Parameter::Relative(-1));
         assert_eq!(vm.read_param(2), Parameter::Relative(3));
+    }
+
+    #[test]
+    fn test_exec_adjust_relative_base() {
+        let mut vm = Program::new(&[ADJ_REL_BASE + P1_IMMEDIATE, 56, END], None);
+        assert_eq!(vm.relative_base, 0);
+        assert_eq!(vm.step().unwrap(), StepResult::InstructionProcessed);
+        assert_eq!(vm.relative_base, 56);
+        assert_eq!(
+            vm.step().unwrap(),
+            StepResult::Stopped(ADJ_REL_BASE + P1_IMMEDIATE)
+        );
     }
 
     const ADD_PROG: [Word; 7] = [ADD, 5, 6, 0, END, 2, 3];
@@ -298,7 +324,7 @@ mod tests {
     #[test]
     fn test_add_pos_mode() {
         assert_eq!(
-            Program::new(&ADD_PROG)
+            Program::new(&ADD_PROG, None)
                 .exec_without_io(Some(5), Some(6))
                 .unwrap(),
             5
@@ -308,7 +334,7 @@ mod tests {
     #[test]
     fn test_mult_pos_mode() {
         assert_eq!(
-            Program::new(&MULT_PROG)
+            Program::new(&MULT_PROG, None)
                 .exec_without_io(Some(5), Some(6))
                 .unwrap(),
             6
@@ -322,7 +348,7 @@ mod tests {
     #[test]
     fn test_add_immediate_mode() {
         assert_eq!(
-            Program::new(&ADD_PROG_IMMEDIAT_MODE)
+            Program::new(&ADD_PROG_IMMEDIAT_MODE, None)
                 .exec_without_io(Some(5), Some(6))
                 .unwrap(),
             11
@@ -332,7 +358,7 @@ mod tests {
     #[test]
     fn test_mult_immediate_mode() {
         assert_eq!(
-            Program::new(&MULT_PROG_IMMEDIAT_MODE)
+            Program::new(&MULT_PROG_IMMEDIAT_MODE, None)
                 .exec_without_io(Some(5), Some(6))
                 .unwrap(),
             30
@@ -343,7 +369,7 @@ mod tests {
 
     #[test]
     fn test_io() {
-        let mut program = Program::new(&IO_PROG);
+        let mut program = Program::new(&IO_PROG, None);
         program.feed_input(7);
         program.exec_without_verb_noun().unwrap();
         assert_eq!(program.read_output(), Some(7));
@@ -363,12 +389,16 @@ mod tests {
         ];
         // jump away leaves the initial instruction
         assert_eq!(
-            Program::new(&prog).exec_without_io(Some(1), None).unwrap(),
+            Program::new(&prog, None)
+                .exec_without_io(Some(1), None)
+                .unwrap(),
             JUMP_T + P1_IMMEDIATE + P2_IMMEDIATE
         );
         // no jump overwrites the initial instruciton with 3 + 7 = 10
         assert_eq!(
-            Program::new(&prog).exec_without_io(Some(0), None).unwrap(),
+            Program::new(&prog, None)
+                .exec_without_io(Some(0), None)
+                .unwrap(),
             10
         );
     }
@@ -387,12 +417,16 @@ mod tests {
         ];
         // jump away leaves the initial instruction
         assert_eq!(
-            Program::new(&prog).exec_without_io(Some(0), None).unwrap(),
+            Program::new(&prog, None)
+                .exec_without_io(Some(0), None)
+                .unwrap(),
             JUMP_F + P1_IMMEDIATE + P2_IMMEDIATE
         );
         // no jump overwrites the initial instruciton with 3 + 7 = 10
         assert_eq!(
-            Program::new(&prog).exec_without_io(Some(1), None).unwrap(),
+            Program::new(&prog, None)
+                .exec_without_io(Some(1), None)
+                .unwrap(),
             10
         );
     }
@@ -402,14 +436,14 @@ mod tests {
         let prog = [LESS_THEN + P1_IMMEDIATE + P2_IMMEDIATE, -1, -1, 0, END];
         // 3 < 4 = true -> we store 1 in pos 0
         assert_eq!(
-            Program::new(&prog)
+            Program::new(&prog, None)
                 .exec_without_io(Some(3), Some(4))
                 .unwrap(),
             1
         );
         // 5 < 4 = false -> we store 0 in pos 0
         assert_eq!(
-            Program::new(&prog)
+            Program::new(&prog, None)
                 .exec_without_io(Some(5), Some(4))
                 .unwrap(),
             0
@@ -421,14 +455,14 @@ mod tests {
         let prog = [EQUAL + P1_IMMEDIATE + P2_IMMEDIATE, -1, -10, 0, END];
         // 3 == 3 = true -> we store 1 in pos 0
         assert_eq!(
-            Program::new(&prog)
+            Program::new(&prog, None)
                 .exec_without_io(Some(3), Some(3))
                 .unwrap(),
             1
         );
         // 5 == 4 = false -> we store 0 in pos 0
         assert_eq!(
-            Program::new(&prog)
+            Program::new(&prog, None)
                 .exec_without_io(Some(5), Some(4))
                 .unwrap(),
             0
