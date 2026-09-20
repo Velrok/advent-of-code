@@ -7,7 +7,7 @@ const LOOPING_PHASES: [i64; 5] = [5, 6, 7, 8, 9];
 
 fn main() -> Result<()> {
     let amp_p = Program::from_file(std::path::Path::new("inputs/day07.txt"))?;
-    // part01(&amp_p);
+    part01(&amp_p);
     part02(&amp_p);
     Ok(())
 }
