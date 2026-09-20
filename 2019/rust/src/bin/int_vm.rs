@@ -2,9 +2,33 @@ use anyhow::Result;
 use aoc19::intcode::Program;
 use std::io::Read;
 
+enum Commands {
+    Run,
+}
+
 fn main() -> Result<()> {
-    let args: Vec<_> = std::env::args().collect();
-    let mut program = match args.get(1) {
+    let args: Vec<String> = std::env::args().collect();
+    match args.get(1) {
+        None => print_help(),
+        Some(cmd_str) => {
+            let cmd = match cmd_str.as_str() {
+                "run" => Commands::Run,
+                _ => anyhow::bail!("Unknown command: {cmd_str}"),
+            };
+            match cmd {
+                Commands::Run => execute(&args[2..])?,
+            }
+        }
+    };
+    Ok(())
+}
+
+fn print_help() {
+    println!("Todo: help page")
+}
+
+fn execute(args: &[String]) -> Result<()> {
+    let mut program = match args.first() {
         None => anyhow::bail!("Expected one arg to be valid program file"),
         Some(filename) => {
             let program_path = std::path::Path::new(filename);

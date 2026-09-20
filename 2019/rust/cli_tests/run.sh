@@ -5,8 +5,8 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-cargo build --bin intcode-vm --quiet
-BIN=./target/debug/intcode-vm
+cargo build --release --bin intcode-vm --quiet
+BIN=./target/release/intcode-vm
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
 failures=0
@@ -15,7 +15,7 @@ check() {
   local desc="$1" expected="$2" stdin="$3"
   shift 3
   local actual
-  actual=$(printf '%s' "$stdin" | "$BIN" "$@" 2>/dev/null)
+  actual=$(printf '%s' "$stdin" | "$BIN" run "$@" 2>/dev/null)
   if [ "$actual" = "$expected" ]; then
     printf '%-45s expected=%-6s actual=%-6s OK\n' "$desc" "$expected" "$actual"
   else
