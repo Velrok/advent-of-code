@@ -4,6 +4,7 @@ use std::io::Read;
 
 enum Commands {
     Run,
+    Decompile,
 }
 
 fn main() -> Result<()> {
@@ -15,12 +16,40 @@ fn main() -> Result<()> {
                 "run" => Commands::Run,
                 _ => anyhow::bail!("Unknown command: {cmd_str}"),
             };
+            let cmd_args = &args[2..];
             match cmd {
-                Commands::Run => execute(&args[2..])?,
+                Commands::Run => execute(cmd_args)?,
+                Commands::Decompile => decompile(cmd_args)?,
             }
         }
     };
     Ok(())
+}
+
+fn decompile(cmd_args: &[String]) -> Result<()> {
+    let input_path_str = cmd_args.first();
+    let output_path_str = cmd_args.get(1);
+    if let None = input_path_str {
+        anyhow::bail!("decompile needs a file to read")
+    }
+    let mut writer: Box<dyn std::io::Write> = match output_path_str {
+        Some(out_dest) => {
+            let file = std::fs::File::create(std::path::Path::new(out_dest))
+                .expect("Cant open dest_file for writting!");
+            Box::new(std::io::BufWriter::new(file))
+        }
+        None => Box::new(std::io::stdout()),
+    };
+    // we can tokenize by ,
+    // then read the int as an op type
+    // should be able to reuse fn read_instruction(&self) -> Instruction after some refactor to take
+    // an opcode: Word and some mem slice *[Word]
+    // now might be the time to give Instruction a width we know how many to read
+    // we can do this in a loop until we get to the end of the tokens
+    // we shoudl end up with a [Instrction]
+    // we can then map a translator Instrction -> String
+    // and finally print to the writer one line per Instruction
+    todo!()
 }
 
 fn print_help() {
