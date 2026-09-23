@@ -2,10 +2,10 @@ use anyhow::Result;
 use std::collections::VecDeque;
 
 type Address = usize;
-type Word = i64;
+pub type Word = i64;
 
 #[derive(PartialEq, Debug)]
-enum Parameter {
+pub enum Parameter {
     Relative(Word),
     Position(Address),
     Immediate(Word),
@@ -19,7 +19,7 @@ pub enum StepResult {
 }
 
 #[derive(Debug)]
-enum Instruction {
+pub enum Instruction {
     Add(Parameter, Parameter, Address),
     Mult(Parameter, Parameter, Address),
     Input(Parameter),
@@ -30,6 +30,16 @@ enum Instruction {
     Equals(Parameter, Parameter, Address),
     AdjustRelativeBase(Parameter),
     End,
+}
+
+pub fn instruction_width(op_code: Word) -> usize {
+    match op_code % 100 {
+        1 | 2 | 7 | 8 => 4,
+        3 | 4 | 9 => 2,
+        5 | 6 => 3,
+        99 => 1,
+        _ => unreachable!("We are only fed valid programs."),
+    }
 }
 
 #[derive(Clone)]
@@ -107,6 +117,10 @@ impl Program {
         }
     }
 
+    fn inc_instruction_pointer(&mut self, distance: usize) {
+        self.instruction_pointer += distance;
+    }
+
     pub fn step(&mut self) -> Result<StepResult> {
         let op = self.read_instruction();
         #[cfg(debug_assertions)]
@@ -121,14 +135,14 @@ impl Program {
                 let x = self.param_value(p1);
                 let y = self.param_value(p2);
                 self.set_mem(target, x + y);
-                self.instruction_pointer += 4;
+                self.inc_instruction_pointer(4);
                 StepResult::InstructionProcessed
             }
             Instruction::Mult(p1, p2, target_addr) => {
                 let x = self.param_value(p1);
                 let y = self.param_value(p2);
                 self.set_mem(target_addr, x * y);
-                self.instruction_pointer += 4;
+                self.inc_instruction_pointer(4);
                 StepResult::InstructionProcessed
             }
             Instruction::End => {
@@ -140,30 +154,30 @@ impl Program {
                     let target_addr = Address::try_from(self.param_value(param1))
                         .expect("Output val is a usize.");
                     self.set_mem(target_addr, val);
-                    self.instruction_pointer += 2;
+                    self.inc_instruction_pointer(2);
                     StepResult::InstructionProcessed
                 }
                 None => anyhow::bail!("Expected more inputs, but got None."),
             },
             Instruction::Output(param1) => {
                 let val = self.param_value(param1);
-                self.instruction_pointer += 2;
+                self.inc_instruction_pointer(2);
                 self.outputs.push_back(val);
                 StepResult::OutputWritten(val)
             }
             Instruction::JumpIfTrue(param1, param2) => {
                 if self.param_value(param1) > 0 {
-                    self.instruction_pointer = self.param_value(param2) as usize;
+                    self.set_instruction_pointer(self.param_value(param2) as usize);
                 } else {
-                    self.instruction_pointer += 3;
+                    self.inc_instruction_pointer(3);
                 }
                 StepResult::InstructionProcessed
             }
             Instruction::JumpIfFalse(param1, param2) => {
                 if self.param_value(param1) == 0 {
-                    self.instruction_pointer = self.param_value(param2) as usize;
+                    self.set_instruction_pointer(self.param_value(param2) as usize);
                 } else {
-                    self.instruction_pointer += 3;
+                    self.inc_instruction_pointer(3);
                 }
                 StepResult::InstructionProcessed
             }
@@ -174,13 +188,13 @@ impl Program {
                     0
                 };
                 self.set_mem(target_addr, result);
-                self.instruction_pointer += 4;
+                self.inc_instruction_pointer(4);
                 StepResult::InstructionProcessed
             }
             Instruction::AdjustRelativeBase(param1) => {
                 let diff = self.param_value(param1);
                 self.relative_base += diff;
-                self.instruction_pointer += 2;
+                self.inc_instruction_pointer(2);
                 StepResult::InstructionProcessed
             }
             Instruction::Equals(param1, param2, target_addr) => {
@@ -190,7 +204,7 @@ impl Program {
                     0
                 };
                 self.set_mem(target_addr, result);
-                self.instruction_pointer += 4;
+                self.inc_instruction_pointer(4);
                 StepResult::InstructionProcessed
             }
         };
@@ -219,41 +233,61 @@ impl Program {
     }
 
     fn read_instruction(&self) -> Instruction {
-        let op_code = self.memory[self.instruction_pointer] % 100;
+        let following_mem = &self.memory[self.instruction_pointer + 1..];
+
+        Self::parse_instruction(self.memory[self.instruction_pointer], following_mem)
+    }
+
+    pub fn parse_instruction(op: Word, following_mem: &[Word]) -> Instruction {
+        let op_code = op % 100;
         match op_code {
             1 => Instruction::Add(
-                self.read_param(1),
-                self.read_param(2),
-                self.memory[self.instruction_pointer + 3] as usize,
+                Self::parse_param(op, 0, following_mem),
+                Self::parse_param(op, 1, following_mem),
+                following_mem[2] as usize,
             ),
             2 => Instruction::Mult(
-                self.read_param(1),
-                self.read_param(2),
-                self.memory[self.instruction_pointer + 3] as usize,
+                Self::parse_param(op, 0, following_mem),
+                Self::parse_param(op, 1, following_mem),
+                following_mem[2] as usize,
             ),
-            3 => Instruction::Input(self.read_param(1)),
-            4 => Instruction::Output(self.read_param(1)),
-            5 => Instruction::JumpIfTrue(self.read_param(1), self.read_param(2)),
-            6 => Instruction::JumpIfFalse(self.read_param(1), self.read_param(2)),
+            3 => Instruction::Input(Self::parse_param(op, 0, following_mem)),
+            4 => Instruction::Output(Self::parse_param(op, 0, following_mem)),
+            5 => Instruction::JumpIfTrue(
+                Self::parse_param(op, 0, following_mem),
+                Self::parse_param(op, 1, following_mem),
+            ),
+            6 => Instruction::JumpIfFalse(
+                Self::parse_param(op, 0, following_mem),
+                Self::parse_param(op, 1, following_mem),
+            ),
             7 => Instruction::LessThen(
-                self.read_param(1),
-                self.read_param(2),
-                self.memory[self.instruction_pointer + 3] as usize,
+                Self::parse_param(op, 0, following_mem),
+                Self::parse_param(op, 1, following_mem),
+                following_mem[2] as usize,
             ),
             8 => Instruction::Equals(
-                self.read_param(1),
-                self.read_param(2),
-                self.memory[self.instruction_pointer + 3] as usize,
+                Self::parse_param(op, 0, following_mem),
+                Self::parse_param(op, 1, following_mem),
+                following_mem[2] as usize,
             ),
-            9 => Instruction::AdjustRelativeBase(self.read_param(1)),
+            9 => Instruction::AdjustRelativeBase(Self::parse_param(op, 0, following_mem)),
             99 => Instruction::End,
             _ => unreachable!("We are only fed valid programs."),
         }
     }
 
     fn read_param(&self, number: u32) -> Parameter {
-        let modifier = (self.memory[self.instruction_pointer] / (10 as Word).pow(1 + number)) % 10;
-        let param_val = self.memory[self.instruction_pointer + number as usize];
+        Self::parse_param(
+            self.memory[self.instruction_pointer],
+            number - 1,
+            &self.memory[self.instruction_pointer + 1..],
+        )
+    }
+
+    fn parse_param(op_code: Word, param_pos: u32, mem_slice: &[Word]) -> Parameter {
+        let modifier = (op_code / (10 as Word).pow(2 + param_pos)) % 10;
+        let param_val = mem_slice[param_pos as usize];
         match modifier {
             0 => Parameter::Position(
                 Address::try_from(param_val)
@@ -261,12 +295,16 @@ impl Program {
             ),
             1 => Parameter::Immediate(param_val),
             2 => Parameter::Relative(param_val),
-            _ => unreachable!("We are only fed valid programs."),
+            _ => unreachable!("Unexpected param modifier."),
         }
     }
 
     pub fn stopped(&self) -> bool {
         self.stopped
+    }
+
+    fn set_instruction_pointer(&mut self, new: usize) {
+        self.instruction_pointer = new
     }
 }
 

@@ -1,8 +1,12 @@
+use anyhow::Context;
 use anyhow::Result;
+use aoc19::intcode::Instruction;
 use aoc19::intcode::Program;
+use aoc19::intcode::Word;
+use itertools::Itertools;
 use std::{
     fs::File,
-    io::{BufReader, BufWriter, Read, Write},
+    io::{BufRead, BufReader, BufWriter, Read, Write},
     path::Path,
 };
 
@@ -18,6 +22,7 @@ fn main() -> Result<()> {
         Some(cmd_str) => {
             let cmd = match cmd_str.as_str() {
                 "run" => Commands::Run,
+                "decomp" => Commands::Decompile,
                 _ => anyhow::bail!("Unknown command: {cmd_str}"),
             };
             let cmd_args = &args[2..];
@@ -47,29 +52,111 @@ fn decompile(cmd_args: &[String]) -> Result<()> {
             let input_path = Path::new(input_path_str);
 
             let file = File::open(input_path);
-            let ints = BufReader::new(file?).split(b',').map(|bytes| {
-                str::from_utf8(bytes)
-                    .expect("Expected UTF8 encoding")
+            let reader = BufReader::new(file?);
+            let prog_code = reader.split(b',').map(|bytes| {
+                let binding = bytes.unwrap();
+                let s = str::from_utf8(&binding).expect("Expected UTF8 encoding");
+                s.trim()
                     .parse::<i64>()
-                    .expect("Expected to only see i64 numbers.");
+                    .with_context(|| format!("expected i64, got {s:?}"))
+                    .unwrap()
             });
 
-            // we can tokenize by ,
-            // then read the int as an op type
-            // should be able to reuse fn read_instruction(&self) -> Instruction after some refactor to take
-            // an opcode: Word and some mem slice *[Word]
-            // now might be the time to give Instruction a width we know how many to read
-            // we can do this in a loop until we get to the end of the tokens
-            // we shoudl end up with a [Instrction]
-            // we can then map a translator Instrction -> String
-            // and finally print to the writer one line per Instruction
-            todo!()
+            let instructions: Vec<(usize, Instruction)> = prog_code
+                .enumerate()
+                .batching(|it| match it.next() {
+                    Some((idx, op)) => {
+                        let len = aoc19::intcode::instruction_width(op);
+                        let following_mem: Vec<Word> =
+                            it.take(len - 1).map(|(_, mem)| mem).collect();
+                        Some((idx, Program::parse_instruction(op, &following_mem)))
+                    }
+                    None => None,
+                })
+                .collect();
+            for (idx, instruction) in instructions {
+                let line = match instruction {
+                    Instruction::Add(param1, param2, addr) => {
+                        let p1 = decomp_param(param1);
+                        let p2 = decomp_param(param2);
+                        format!("ADD {p1} {p2} -> @{addr}")
+                    }
+                    Instruction::Mult(param1, param2, addr) => {
+                        let p1 = decomp_param(param1);
+                        let p2 = decomp_param(param2);
+                        format!("MULT {p1} {p2} -> @{addr}")
+                    }
+                    Instruction::Input(parameter) => {
+                        let p = decomp_param(parameter);
+                        format!("READ {p}")
+                    }
+                    Instruction::Output(parameter) => {
+                        let p = decomp_param(parameter);
+                        format!("WRITE {p}")
+                    }
+                    Instruction::JumpIfTrue(condition, target) => {
+                        let p = decomp_param(condition);
+                        let addr = decomp_param(target);
+                        format!("JUMP_IF_TRUE {p} -> {addr}")
+                    }
+                    Instruction::JumpIfFalse(condition, target) => {
+                        let p = decomp_param(condition);
+                        let addr = decomp_param(target);
+                        format!("JUMP_IF_FALSE {p} -> {addr}")
+                    }
+                    Instruction::LessThen(param1, param2, addr) => {
+                        let p1 = decomp_param(param1);
+                        let p2 = decomp_param(param2);
+                        format!("LESS_THEN {p1} {p2} -> @{addr}")
+                    }
+                    Instruction::Equals(param1, param2, addr) => {
+                        let p1 = decomp_param(param1);
+                        let p2 = decomp_param(param2);
+                        format!("EQUALS {p1} {p2} -> @{addr}")
+                    }
+                    Instruction::AdjustRelativeBase(parameter) => {
+                        let p = decomp_param(parameter);
+                        format!("REL_BASE {p}")
+                    }
+                    Instruction::End => "END".to_string(),
+                };
+                writer
+                    .write_all(format!("{idx:04}: {line}\n").as_bytes())
+                    .unwrap();
+            }
+            Ok(())
         }
     }
 }
 
+fn decomp_param(param: aoc19::intcode::Parameter) -> String {
+    match param {
+        aoc19::intcode::Parameter::Relative(p) => format!("@[{p}]"),
+        aoc19::intcode::Parameter::Position(p) => format!("@{p}"),
+        aoc19::intcode::Parameter::Immediate(direct_val) => format!("{direct_val}"),
+    }
+}
+
 fn print_help() {
-    println!("Todo: help page")
+    println!(
+        "intcode-vm - run or decompile Intcode programs
+
+USAGE:
+    intcode-vm <COMMAND> [ARGS]
+
+COMMANDS:
+    run <program_file> [noun] [verb]
+        Execute a program, feeding it stdin as comma/space/newline separated
+        inputs. Outputs are printed to stderr as they're produced, the final
+        memory value at address 0 is printed to stdout.
+
+    decomp <program_file> [output_file]
+        Decompile a program into a human-readable instruction listing.
+        Writes to stdout, or to output_file if given.
+
+    (no command)
+        Print this help page."
+    )
 }
 
 fn execute(args: &[String]) -> Result<()> {
