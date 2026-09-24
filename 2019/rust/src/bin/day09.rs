@@ -1,13 +1,30 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use aoc19::intcode::Program;
 
 fn main() -> Result<()> {
+    let p1 = part01();
+    println!("Part1: {p1:?}");
+    let p2 = part02();
+    println!("Part2: {p2:?}");
+    Ok(())
+}
+
+fn part01() -> Result<i64> {
     let mut process = Program::from_file(std::path::Path::new("inputs/day09.txt"))?;
     process.feed_input(1);
-    let exit_code = process.exec_without_verb_noun();
-    let outputs: Vec<_> = std::iter::from_fn(|| process.read_output()).collect();
-    println!("{exit_code:?} > {outputs:?}");
-    Ok(())
+    let _ = process.exec_without_verb_noun();
+    process
+        .read_last_output()
+        .context("Output expected but found None.")
+}
+
+fn part02() -> Result<i64> {
+    let mut process = Program::from_file(std::path::Path::new("inputs/day09.txt"))?;
+    process.feed_input(2);
+    let _ = process.exec_without_verb_noun();
+    process
+        .read_last_output()
+        .context("Output expected but found None.")
 }
 
 #[cfg(test)]
