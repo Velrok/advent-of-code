@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{self, Result};
 use std::collections::VecDeque;
 
 type Address = usize;
@@ -91,6 +91,21 @@ impl Program {
 
     pub fn exec_without_verb_noun(&mut self) -> Result<Word> {
         self.exec(None, None)
+    }
+
+    pub fn exec_until_next_output(&mut self) -> Result<Option<Word>> {
+        let mut steps: u32 = 0;
+        loop {
+            steps += 1;
+            if steps == u32::MAX {
+                return Err(anyhow::anyhow!("Detected infinite loop."));
+            }
+            match self.step()? {
+                StepResult::Stopped(_) => return Ok(None),
+                StepResult::InstructionProcessed => {} // loop
+                StepResult::OutputWritten(out) => return Ok(Some(out)),
+            }
+        }
     }
 
     pub fn feed_input(&mut self, val: Word) {
