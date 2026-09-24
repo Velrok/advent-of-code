@@ -1,7 +1,12 @@
 use anyhow::Result;
+use aoc19::intcode::Program;
 
 fn main() -> Result<()> {
-    // let amp_p = Program::from_file(std::path::Path::new("inputs/day07.txt"))?;
+    let mut process = Program::from_file(std::path::Path::new("inputs/day09.txt"))?;
+    process.feed_input(1);
+    let exit_code = process.exec_without_verb_noun();
+    let outputs: Vec<_> = std::iter::from_fn(|| process.read_output()).collect();
+    println!("{exit_code:?} > {outputs:?}");
     Ok(())
 }
 

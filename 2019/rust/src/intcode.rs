@@ -2,13 +2,20 @@ use anyhow::Result;
 use std::collections::VecDeque;
 
 type Address = usize;
+type AddressOffset = isize;
 pub type Word = i64;
 
 #[derive(PartialEq, Debug)]
-pub enum Parameter {
-    Relative(Word),
+pub enum ReadParameter {
+    Relative(AddressOffset),
     Position(Address),
     Immediate(Word),
+}
+
+#[derive(PartialEq, Debug)]
+pub enum WriteParameter {
+    Relative(AddressOffset),
+    Position(Address),
 }
 
 #[derive(PartialEq, Debug)]
@@ -20,15 +27,15 @@ pub enum StepResult {
 
 #[derive(Debug)]
 pub enum Instruction {
-    Add(Parameter, Parameter, Address),
-    Mult(Parameter, Parameter, Address),
-    Input(Parameter),
-    Output(Parameter),
-    JumpIfTrue(Parameter, Parameter),
-    JumpIfFalse(Parameter, Parameter),
-    LessThen(Parameter, Parameter, Address),
-    Equals(Parameter, Parameter, Address),
-    AdjustRelativeBase(Parameter),
+    Add(ReadParameter, ReadParameter, WriteParameter),
+    Mult(ReadParameter, ReadParameter, WriteParameter),
+    Input(WriteParameter),
+    Output(ReadParameter),
+    JumpIfTrue(ReadParameter, ReadParameter),
+    JumpIfFalse(ReadParameter, ReadParameter),
+    LessThen(ReadParameter, ReadParameter, WriteParameter),
+    Equals(ReadParameter, ReadParameter, WriteParameter),
+    AdjustRelativeBase(ReadParameter),
     End,
 }
 
@@ -128,19 +135,21 @@ impl Program {
             let id = &self.id;
             let instr_ptr = self.instruction_pointer;
             let base = self.relative_base;
-            print!("<{id}> {instr_ptr}|{base}({op:?})");
+            eprint!("<{id}> {instr_ptr}|{base}({op:?})");
         }
         let result = match op {
-            Instruction::Add(p1, p2, target) => {
-                let x = self.param_value(p1);
-                let y = self.param_value(p2);
-                self.set_mem(target, x + y);
+            Instruction::Add(p1, p2, target_param) => {
+                let x = self.read_param_value(p1);
+                let y = self.read_param_value(p2);
+                let target_addr = self.param_as_target(target_param);
+                self.set_mem(target_addr, x + y);
                 self.inc_instruction_pointer(4);
                 StepResult::InstructionProcessed
             }
-            Instruction::Mult(p1, p2, target_addr) => {
-                let x = self.param_value(p1);
-                let y = self.param_value(p2);
+            Instruction::Mult(p1, p2, target_param) => {
+                let x = self.read_param_value(p1);
+                let y = self.read_param_value(p2);
+                let target_addr = self.param_as_target(target_param);
                 self.set_mem(target_addr, x * y);
                 self.inc_instruction_pointer(4);
                 StepResult::InstructionProcessed
@@ -151,8 +160,7 @@ impl Program {
             }
             Instruction::Input(param1) => match self.inputs.pop_front() {
                 Some(val) => {
-                    let target_addr = Address::try_from(self.param_value(param1))
-                        .expect("Output val is a usize.");
+                    let target_addr = self.param_as_target(param1);
                     self.set_mem(target_addr, val);
                     self.inc_instruction_pointer(2);
                     StepResult::InstructionProcessed
@@ -160,56 +168,56 @@ impl Program {
                 None => anyhow::bail!("Expected more inputs, but got None."),
             },
             Instruction::Output(param1) => {
-                let val = self.param_value(param1);
+                let val = self.read_param_value(param1);
                 self.inc_instruction_pointer(2);
                 self.outputs.push_back(val);
                 StepResult::OutputWritten(val)
             }
             Instruction::JumpIfTrue(param1, param2) => {
-                if self.param_value(param1) > 0 {
-                    self.set_instruction_pointer(self.param_value(param2) as usize);
+                if self.read_param_value(param1) > 0 {
+                    self.set_instruction_pointer(self.read_param_value(param2) as usize);
                 } else {
                     self.inc_instruction_pointer(3);
                 }
                 StepResult::InstructionProcessed
             }
             Instruction::JumpIfFalse(param1, param2) => {
-                if self.param_value(param1) == 0 {
-                    self.set_instruction_pointer(self.param_value(param2) as usize);
+                if self.read_param_value(param1) == 0 {
+                    self.set_instruction_pointer(self.read_param_value(param2) as usize);
                 } else {
                     self.inc_instruction_pointer(3);
                 }
                 StepResult::InstructionProcessed
             }
-            Instruction::LessThen(param1, param2, target_addr) => {
-                let result = if self.param_value(param1) < self.param_value(param2) {
+            Instruction::LessThen(param1, param2, target_param) => {
+                let result = if self.read_param_value(param1) < self.read_param_value(param2) {
                     1
                 } else {
                     0
                 };
-                self.set_mem(target_addr, result);
+                self.set_mem(self.param_as_target(target_param), result);
                 self.inc_instruction_pointer(4);
                 StepResult::InstructionProcessed
             }
             Instruction::AdjustRelativeBase(param1) => {
-                let diff = self.param_value(param1);
+                let diff = self.read_param_value(param1);
                 self.relative_base += diff;
                 self.inc_instruction_pointer(2);
                 StepResult::InstructionProcessed
             }
-            Instruction::Equals(param1, param2, target_addr) => {
-                let result = if self.param_value(param1) == self.param_value(param2) {
+            Instruction::Equals(param1, param2, target_param) => {
+                let result = if self.read_param_value(param1) == self.read_param_value(param2) {
                     1
                 } else {
                     0
                 };
-                self.set_mem(target_addr, result);
+                self.set_mem(self.param_as_target(target_param), result);
                 self.inc_instruction_pointer(4);
                 StepResult::InstructionProcessed
             }
         };
         #[cfg(debug_assertions)]
-        println!(" >> {result:?}");
+        eprintln!(" >> {result:?}");
         Ok(result)
     }
 
@@ -220,15 +228,25 @@ impl Program {
         self.memory[addr] = val;
     }
 
-    fn param_value(&self, param: Parameter) -> Word {
+    fn read_param_value(&self, param: ReadParameter) -> Word {
         match param {
-            Parameter::Position(addr) => self.memory[addr],
-            Parameter::Relative(offset) => {
-                let addr = usize::try_from(self.relative_base + offset)
+            ReadParameter::Position(addr) => self.memory[addr],
+            ReadParameter::Relative(offset) => {
+                let addr = usize::try_from(self.relative_base + Word::try_from(offset).unwrap())
                     .expect("Programms say within the memory space and dont go negative.");
                 self.memory[addr]
             }
-            Parameter::Immediate(val) => val,
+            ReadParameter::Immediate(val) => val,
+        }
+    }
+
+    fn param_as_target(&self, param: WriteParameter) -> Address {
+        match param {
+            WriteParameter::Position(addr) => addr,
+            WriteParameter::Relative(offset) => {
+                Address::try_from(self.relative_base + Word::try_from(offset).unwrap())
+                    .expect("Valid target address.")
+            }
         }
     }
 
@@ -242,59 +260,69 @@ impl Program {
         let op_code = op % 100;
         match op_code {
             1 => Instruction::Add(
-                Self::parse_param(op, 0, following_mem),
-                Self::parse_param(op, 1, following_mem),
-                following_mem[2] as usize,
+                Self::parse_read_param(op, 0, following_mem),
+                Self::parse_read_param(op, 1, following_mem),
+                Self::parse_write_param(op, 2, following_mem),
             ),
             2 => Instruction::Mult(
-                Self::parse_param(op, 0, following_mem),
-                Self::parse_param(op, 1, following_mem),
-                following_mem[2] as usize,
+                Self::parse_read_param(op, 0, following_mem),
+                Self::parse_read_param(op, 1, following_mem),
+                Self::parse_write_param(op, 2, following_mem),
             ),
-            3 => Instruction::Input(Self::parse_param(op, 0, following_mem)),
-            4 => Instruction::Output(Self::parse_param(op, 0, following_mem)),
+            3 => Instruction::Input(Self::parse_write_param(op, 0, following_mem)),
+            4 => Instruction::Output(Self::parse_read_param(op, 0, following_mem)),
             5 => Instruction::JumpIfTrue(
-                Self::parse_param(op, 0, following_mem),
-                Self::parse_param(op, 1, following_mem),
+                Self::parse_read_param(op, 0, following_mem),
+                Self::parse_read_param(op, 1, following_mem),
             ),
             6 => Instruction::JumpIfFalse(
-                Self::parse_param(op, 0, following_mem),
-                Self::parse_param(op, 1, following_mem),
+                Self::parse_read_param(op, 0, following_mem),
+                Self::parse_read_param(op, 1, following_mem),
             ),
             7 => Instruction::LessThen(
-                Self::parse_param(op, 0, following_mem),
-                Self::parse_param(op, 1, following_mem),
-                following_mem[2] as usize,
+                Self::parse_read_param(op, 0, following_mem),
+                Self::parse_read_param(op, 1, following_mem),
+                Self::parse_write_param(op, 2, following_mem),
             ),
             8 => Instruction::Equals(
-                Self::parse_param(op, 0, following_mem),
-                Self::parse_param(op, 1, following_mem),
-                following_mem[2] as usize,
+                Self::parse_read_param(op, 0, following_mem),
+                Self::parse_read_param(op, 1, following_mem),
+                Self::parse_write_param(op, 2, following_mem),
             ),
-            9 => Instruction::AdjustRelativeBase(Self::parse_param(op, 0, following_mem)),
+            9 => Instruction::AdjustRelativeBase(Self::parse_read_param(op, 0, following_mem)),
             99 => Instruction::End,
             _ => unreachable!("We are only fed valid programs."),
         }
     }
 
-    fn read_param(&self, number: u32) -> Parameter {
-        Self::parse_param(
-            self.memory[self.instruction_pointer],
-            number - 1,
-            &self.memory[self.instruction_pointer + 1..],
-        )
-    }
-
-    fn parse_param(op_code: Word, param_pos: u32, mem_slice: &[Word]) -> Parameter {
+    fn parse_read_param(op_code: Word, param_pos: u32, mem_slice: &[Word]) -> ReadParameter {
         let modifier = (op_code / (10 as Word).pow(2 + param_pos)) % 10;
         let param_val = mem_slice[param_pos as usize];
         match modifier {
-            0 => Parameter::Position(
+            0 => ReadParameter::Position(
                 Address::try_from(param_val)
                     .expect("Position parameter points to a valid Address in memory."),
             ),
-            1 => Parameter::Immediate(param_val),
-            2 => Parameter::Relative(param_val),
+            1 => ReadParameter::Immediate(param_val),
+            2 => ReadParameter::Relative(
+                AddressOffset::try_from(param_val).expect("Relative offset fits in isize."),
+            ),
+            _ => unreachable!("Unexpected param modifier."),
+        }
+    }
+
+    fn parse_write_param(op_code: Word, param_pos: u32, mem_slice: &[Word]) -> WriteParameter {
+        let modifier = (op_code / (10 as Word).pow(2 + param_pos)) % 10;
+        let param_val = mem_slice[param_pos as usize];
+        match modifier {
+            0 => WriteParameter::Position(
+                Address::try_from(param_val)
+                    .expect("Position parameter points to a valid Address in memory."),
+            ),
+            1 => panic!("1 mod not allowed for WriteParams"),
+            2 => WriteParameter::Relative(
+                AddressOffset::try_from(param_val).expect("Relative offset fits in isize."),
+            ),
             _ => unreachable!("Unexpected param modifier."),
         }
     }
@@ -331,23 +359,43 @@ mod tests {
 
     #[test]
     fn test_read_position_param() {
-        let vm = Program::new(&[ADD, 5, 6, 0, END, 1, 2], None);
-        assert_eq!(vm.read_param(1), Parameter::Position(5));
-        assert_eq!(vm.read_param(2), Parameter::Position(6));
+        let following_mem = [5, 6, 0, END, 1, 2];
+        assert_eq!(
+            Program::parse_read_param(ADD, 0, &following_mem),
+            ReadParameter::Position(5)
+        );
+        assert_eq!(
+            Program::parse_read_param(ADD, 1, &following_mem),
+            ReadParameter::Position(6)
+        );
     }
 
     #[test]
     fn test_read_immediate_param() {
-        let vm = Program::new(&[ADD + P1_IMMEDIATE + P2_IMMEDIATE, 5, 6, 0, END], None);
-        assert_eq!(vm.read_param(1), Parameter::Immediate(5));
-        assert_eq!(vm.read_param(2), Parameter::Immediate(6));
+        let op = ADD + P1_IMMEDIATE + P2_IMMEDIATE;
+        let following_mem = [5, 6, 0, END];
+        assert_eq!(
+            Program::parse_read_param(op, 0, &following_mem),
+            ReadParameter::Immediate(5)
+        );
+        assert_eq!(
+            Program::parse_read_param(op, 1, &following_mem),
+            ReadParameter::Immediate(6)
+        );
     }
 
     #[test]
     fn test_read_relative_param() {
-        let vm = Program::new(&[ADD + P1_RELATIVE + P2_RELATIVE, -1, 3, 0, END], None);
-        assert_eq!(vm.read_param(1), Parameter::Relative(-1));
-        assert_eq!(vm.read_param(2), Parameter::Relative(3));
+        let op = ADD + P1_RELATIVE + P2_RELATIVE;
+        let following_mem = [-1, 3, 0, END];
+        assert_eq!(
+            Program::parse_read_param(op, 0, &following_mem),
+            ReadParameter::Relative(-1)
+        );
+        assert_eq!(
+            Program::parse_read_param(op, 1, &following_mem),
+            ReadParameter::Relative(3)
+        );
     }
 
     #[test]
