@@ -77,45 +77,49 @@ fn decompile(cmd_args: &[String]) -> Result<()> {
             for (idx, instruction) in instructions {
                 let line = match instruction {
                     Instruction::Add(param1, param2, addr) => {
-                        let p1 = decomp_param(param1);
-                        let p2 = decomp_param(param2);
-                        format!("ADD {p1} {p2} -> @{addr}")
+                        let p1 = decomp_read_param(param1);
+                        let p2 = decomp_read_param(param2);
+                        let addr = decomp_write_param(addr);
+                        format!("ADD {p1} {p2} -> {addr}")
                     }
                     Instruction::Mult(param1, param2, addr) => {
-                        let p1 = decomp_param(param1);
-                        let p2 = decomp_param(param2);
-                        format!("MULT {p1} {p2} -> @{addr}")
+                        let p1 = decomp_read_param(param1);
+                        let p2 = decomp_read_param(param2);
+                        let addr = decomp_write_param(addr);
+                        format!("MULT {p1} {p2} -> {addr}")
                     }
                     Instruction::Input(parameter) => {
-                        let p = decomp_param(parameter);
+                        let p = decomp_write_param(parameter);
                         format!("READ {p}")
                     }
                     Instruction::Output(parameter) => {
-                        let p = decomp_param(parameter);
+                        let p = decomp_read_param(parameter);
                         format!("WRITE {p}")
                     }
                     Instruction::JumpIfTrue(condition, target) => {
-                        let p = decomp_param(condition);
-                        let addr = decomp_param(target);
+                        let p = decomp_read_param(condition);
+                        let addr = decomp_read_param(target);
                         format!("JUMP_IF_TRUE {p} -> {addr}")
                     }
                     Instruction::JumpIfFalse(condition, target) => {
-                        let p = decomp_param(condition);
-                        let addr = decomp_param(target);
+                        let p = decomp_read_param(condition);
+                        let addr = decomp_read_param(target);
                         format!("JUMP_IF_FALSE {p} -> {addr}")
                     }
                     Instruction::LessThen(param1, param2, addr) => {
-                        let p1 = decomp_param(param1);
-                        let p2 = decomp_param(param2);
-                        format!("LESS_THEN {p1} {p2} -> @{addr}")
+                        let p1 = decomp_read_param(param1);
+                        let p2 = decomp_read_param(param2);
+                        let addr = decomp_write_param(addr);
+                        format!("LESS_THEN {p1} {p2} -> {addr}")
                     }
                     Instruction::Equals(param1, param2, addr) => {
-                        let p1 = decomp_param(param1);
-                        let p2 = decomp_param(param2);
-                        format!("EQUALS {p1} {p2} -> @{addr}")
+                        let p1 = decomp_read_param(param1);
+                        let p2 = decomp_read_param(param2);
+                        let addr = decomp_write_param(addr);
+                        format!("EQUALS {p1} {p2} -> {addr}")
                     }
                     Instruction::AdjustRelativeBase(parameter) => {
-                        let p = decomp_param(parameter);
+                        let p = decomp_read_param(parameter);
                         format!("REL_BASE {p}")
                     }
                     Instruction::End => "END".to_string(),
@@ -129,11 +133,18 @@ fn decompile(cmd_args: &[String]) -> Result<()> {
     }
 }
 
-fn decomp_param(param: aoc19::intcode::Parameter) -> String {
+fn decomp_read_param(param: aoc19::intcode::ReadParameter) -> String {
     match param {
-        aoc19::intcode::Parameter::Relative(p) => format!("@[{p}]"),
-        aoc19::intcode::Parameter::Position(p) => format!("@{p}"),
-        aoc19::intcode::Parameter::Immediate(direct_val) => format!("{direct_val}"),
+        aoc19::intcode::ReadParameter::Relative(p) => format!("@[{p}]"),
+        aoc19::intcode::ReadParameter::Position(p) => format!("@{p}"),
+        aoc19::intcode::ReadParameter::Immediate(direct_val) => format!("{direct_val}"),
+    }
+}
+
+fn decomp_write_param(param: aoc19::intcode::WriteParameter) -> String {
+    match param {
+        aoc19::intcode::WriteParameter::Relative(p) => format!("@[{p}]"),
+        aoc19::intcode::WriteParameter::Position(p) => format!("@{p}"),
     }
 }
 
