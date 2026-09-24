@@ -32,3 +32,35 @@ path = "src/bin/day07.rs"
 [[bin]]
 name = "day09"
 path = "src/bin/day09.rs"
+
+[[bin]]
+name = "day11"
+path = "src/bin/day11.rs"
+
+[[bin]]
+name = "day13"
+path = "src/bin/day13.rs"
+
+[[bin]]
+name = "day15"
+path = "src/bin/day15.rs"
+
+[[bin]]
+name = "day17"
+path = "src/bin/day17.rs"
+
+[[bin]]
+name = "day19"
+path = "src/bin/day19.rs"
+
+[[bin]]
+name = "day21"
+path = "src/bin/day21.rs"
+
+[[bin]]
+name = "day23"
+path = "src/bin/day23.rs"
+
+[[bin]]
+name = "day25"
+path = "src/bin/day25.rs"
