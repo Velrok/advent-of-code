@@ -157,7 +157,7 @@ impl Program {
                 let x = self.read_param_value(p1);
                 let y = self.read_param_value(p2);
                 let target_addr = self.param_as_target(target_param);
-                self.set_mem(target_addr, x + y);
+                self.mem_set(target_addr, x + y);
                 self.inc_instruction_pointer(4);
                 StepResult::InstructionProcessed
             }
@@ -165,7 +165,7 @@ impl Program {
                 let x = self.read_param_value(p1);
                 let y = self.read_param_value(p2);
                 let target_addr = self.param_as_target(target_param);
-                self.set_mem(target_addr, x * y);
+                self.mem_set(target_addr, x * y);
                 self.inc_instruction_pointer(4);
                 StepResult::InstructionProcessed
             }
@@ -176,7 +176,7 @@ impl Program {
             Instruction::Input(param1) => match self.inputs.pop_front() {
                 Some(val) => {
                     let target_addr = self.param_as_target(param1);
-                    self.set_mem(target_addr, val);
+                    self.mem_set(target_addr, val);
                     self.inc_instruction_pointer(2);
                     StepResult::InstructionProcessed
                 }
@@ -210,7 +210,7 @@ impl Program {
                 } else {
                     0
                 };
-                self.set_mem(self.param_as_target(target_param), result);
+                self.mem_set(self.param_as_target(target_param), result);
                 self.inc_instruction_pointer(4);
                 StepResult::InstructionProcessed
             }
@@ -226,7 +226,7 @@ impl Program {
                 } else {
                     0
                 };
-                self.set_mem(self.param_as_target(target_param), result);
+                self.mem_set(self.param_as_target(target_param), result);
                 self.inc_instruction_pointer(4);
                 StepResult::InstructionProcessed
             }
@@ -236,20 +236,28 @@ impl Program {
         Ok(result)
     }
 
-    fn set_mem(&mut self, addr: Address, val: Word) {
+    fn mem_set(&mut self, addr: Address, val: Word) {
         if addr >= self.memory.len() {
             self.memory.resize(addr + 1, 0);
         }
         self.memory[addr] = val;
     }
 
+    fn mem_read(&self, addr: Address) -> Word {
+        if addr >= self.memory.len() {
+            0
+        } else {
+            self.memory[addr]
+        }
+    }
+
     fn read_param_value(&self, param: ReadParameter) -> Word {
         match param {
-            ReadParameter::Position(addr) => self.memory[addr],
+            ReadParameter::Position(addr) => self.mem_read(addr),
             ReadParameter::Relative(offset) => {
                 let addr = usize::try_from(self.relative_base + Word::try_from(offset).unwrap())
                     .expect("Programms say within the memory space and dont go negative.");
-                self.memory[addr]
+                self.mem_read(addr)
             }
             ReadParameter::Immediate(val) => val,
         }
@@ -414,6 +422,20 @@ mod tests {
     }
 
     #[test]
+    fn test_read_mixed_mode_params() {
+        let op = ADD + P1_IMMEDIATE + P2_RELATIVE;
+        let following_mem = [9, -4, 0, END];
+        assert_eq!(
+            Program::parse_read_param(op, 0, &following_mem),
+            ReadParameter::Immediate(9)
+        );
+        assert_eq!(
+            Program::parse_read_param(op, 1, &following_mem),
+            ReadParameter::Relative(-4)
+        );
+    }
+
+    #[test]
     fn test_exec_adjust_relative_base() {
         let mut vm = Program::new(&[ADJ_REL_BASE + P1_IMMEDIATE, 56, END], None);
         assert_eq!(vm.relative_base, 0);
@@ -423,6 +445,24 @@ mod tests {
             vm.step().unwrap(),
             StepResult::Stopped(ADJ_REL_BASE + P1_IMMEDIATE)
         );
+    }
+
+    #[test]
+    fn test_mem_set() {
+        let mut vm = Program::new(&[5, 6, 7], None);
+        vm.mem_set(1, 42);
+        assert_eq!(vm.memory, vec![5, 42, 7]);
+        vm.mem_set(5, 99);
+        assert_eq!(vm.memory, vec![5, 42, 7, 0, 0, 99]);
+    }
+
+    #[test]
+    fn test_mem_read() {
+        let vm = Program::new(&[5, 6, 7], None);
+        assert_eq!(vm.mem_read(0), 5);
+        assert_eq!(vm.mem_read(2), 7);
+        assert_eq!(vm.mem_read(3), 0);
+        assert_eq!(vm.mem_read(100), 0);
     }
 
     #[test]
@@ -446,7 +486,15 @@ mod tests {
 
     #[test]
     fn test_input_relative_mode() {
-        let prog = [ADJ_REL_BASE + P1_IMMEDIATE, 4, INP + P1_RELATIVE, 1, END, 0, 0];
+        let prog = [
+            ADJ_REL_BASE + P1_IMMEDIATE,
+            4,
+            INP + P1_RELATIVE,
+            1,
+            END,
+            0,
+            0,
+        ];
         let mut vm = Program::new(&prog, None);
         assert_eq!(vm.step().unwrap(), StepResult::InstructionProcessed);
         vm.feed_input(55);
@@ -465,27 +513,37 @@ mod tests {
         assert_eq!(vm.memory[100], 77);
     }
 
+    const OUTPUT_ALL_MODES_PROG: [Word; 11] = [
+        OUTP + P1_IMMEDIATE,
+        10,
+        OUTP,
+        9,
+        ADJ_REL_BASE + P1_IMMEDIATE,
+        5,
+        OUTP + P1_RELATIVE,
+        5,
+        END,
+        20,
+        30,
+    ];
+
     #[test]
     fn test_output_all_modes_in_order() {
-        let prog = [
-            OUTP + P1_IMMEDIATE,
-            10,
-            OUTP,
-            9,
-            ADJ_REL_BASE + P1_IMMEDIATE,
-            5,
-            OUTP + P1_RELATIVE,
-            5,
-            END,
-            20,
-            30,
-        ];
-        let mut vm = Program::new(&prog, None);
+        let mut vm = Program::new(&OUTPUT_ALL_MODES_PROG, None);
         vm.exec_without_verb_noun().unwrap();
         assert_eq!(vm.read_output(), Some(10));
         assert_eq!(vm.read_output(), Some(20));
         assert_eq!(vm.read_output(), Some(30));
         assert_eq!(vm.read_output(), None);
+    }
+
+    #[test]
+    fn test_exec_until_next_output_all_modes_in_order() {
+        let mut vm = Program::new(&OUTPUT_ALL_MODES_PROG, None);
+        assert_eq!(vm.exec_until_next_output().unwrap(), Some(10));
+        assert_eq!(vm.exec_until_next_output().unwrap(), Some(20));
+        assert_eq!(vm.exec_until_next_output().unwrap(), Some(30));
+        assert_eq!(vm.exec_until_next_output().unwrap(), None);
     }
 
     const ADD_PROG: [Word; 7] = [ADD, 5, 6, 0, END, 2, 3];
