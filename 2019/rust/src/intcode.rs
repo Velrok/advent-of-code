@@ -425,6 +425,46 @@ mod tests {
         );
     }
 
+    #[test]
+    fn test_input_position_mode() {
+        let prog = [INP, 5, END, 0, 0, 0];
+        let mut vm = Program::new(&prog, None);
+        vm.feed_input(7);
+        assert_eq!(vm.step().unwrap(), StepResult::InstructionProcessed);
+        assert_eq!(vm.memory[5], 7);
+    }
+
+    #[test]
+    fn test_input_position_mode_grows_memory() {
+        let prog = [INP, 10, END];
+        let mut vm = Program::new(&prog, None);
+        vm.feed_input(21);
+        assert_eq!(vm.step().unwrap(), StepResult::InstructionProcessed);
+        assert!(vm.memory.len() > 10);
+        assert_eq!(vm.memory[10], 21);
+    }
+
+    #[test]
+    fn test_input_relative_mode() {
+        let prog = [ADJ_REL_BASE + P1_IMMEDIATE, 4, INP + P1_RELATIVE, 1, END, 0, 0];
+        let mut vm = Program::new(&prog, None);
+        assert_eq!(vm.step().unwrap(), StepResult::InstructionProcessed);
+        vm.feed_input(55);
+        assert_eq!(vm.step().unwrap(), StepResult::InstructionProcessed);
+        assert_eq!(vm.memory[5], 55);
+    }
+
+    #[test]
+    fn test_input_relative_mode_grows_memory() {
+        let prog = [ADJ_REL_BASE + P1_IMMEDIATE, 100, INP + P1_RELATIVE, 0, END];
+        let mut vm = Program::new(&prog, None);
+        assert_eq!(vm.step().unwrap(), StepResult::InstructionProcessed);
+        vm.feed_input(77);
+        assert_eq!(vm.step().unwrap(), StepResult::InstructionProcessed);
+        assert!(vm.memory.len() > 100);
+        assert_eq!(vm.memory[100], 77);
+    }
+
     const ADD_PROG: [Word; 7] = [ADD, 5, 6, 0, END, 2, 3];
     const MULT_PROG: [Word; 7] = [MULT, 5, 6, 0, END, 2, 3];
 
