@@ -201,7 +201,7 @@ fn display(visited: &HashSet<Vec2D>, white_panels: &HashSet<Vec2D>) {
     println!("----------------------------");
     for y in (min_y..=max_y).rev() {
         let mut line = String::new();
-        for x in (min_x..=max_x) {
+        for x in min_x..=max_x {
             let pos = Vec2D::new(x, y);
             let char = if white_panels.contains(&pos) {
                 '#'
