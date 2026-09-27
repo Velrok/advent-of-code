@@ -465,6 +465,29 @@ mod tests {
         assert_eq!(vm.memory[100], 77);
     }
 
+    #[test]
+    fn test_output_all_modes_in_order() {
+        let prog = [
+            OUTP + P1_IMMEDIATE,
+            10,
+            OUTP,
+            9,
+            ADJ_REL_BASE + P1_IMMEDIATE,
+            5,
+            OUTP + P1_RELATIVE,
+            5,
+            END,
+            20,
+            30,
+        ];
+        let mut vm = Program::new(&prog, None);
+        vm.exec_without_verb_noun().unwrap();
+        assert_eq!(vm.read_output(), Some(10));
+        assert_eq!(vm.read_output(), Some(20));
+        assert_eq!(vm.read_output(), Some(30));
+        assert_eq!(vm.read_output(), None);
+    }
+
     const ADD_PROG: [Word; 7] = [ADD, 5, 6, 0, END, 2, 3];
     const MULT_PROG: [Word; 7] = [MULT, 5, 6, 0, END, 2, 3];
 
