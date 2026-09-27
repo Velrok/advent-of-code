@@ -143,5 +143,8 @@ fn main() -> Result<()> {
         eprintln!("{steps}: {pos:?}");
     }
 
+    let panels_painted = visited.len();
+    println!("Panels painted at least once: {panels_painted}");
+
     Ok(())
 }
