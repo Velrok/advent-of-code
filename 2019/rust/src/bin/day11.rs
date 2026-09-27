@@ -67,10 +67,10 @@ struct PaintingRobot {
 }
 
 impl PaintingRobot {
-    fn new(prog: Program) -> Self {
+    fn new(prog: Program, white_panels: HashSet<Vec2D>) -> Self {
         PaintingRobot {
             brain: prog,
-            white_panels: HashSet::new(),
+            white_panels,
             orientation: Orientation::Up,
             position: Vec2D::default(),
             stopped: false,
@@ -131,7 +131,17 @@ impl PaintingRobot {
 
 fn main() -> Result<()> {
     let prog = Program::from_file(std::path::Path::new("inputs/day11.txt"))?;
-    let mut robot = PaintingRobot::new(prog);
+    println!("=== Part 01 ===");
+    part1(prog.clone())?;
+
+    println!("=== Part 02 ===");
+    part2(prog.clone())?;
+
+    Ok(())
+}
+
+fn part1(prog: Program) -> Result<()> {
+    let mut robot = PaintingRobot::new(prog, HashSet::new());
     let mut visited: HashSet<Vec2D> = HashSet::new();
     visited.insert(robot.position);
 
@@ -140,11 +150,67 @@ fn main() -> Result<()> {
         steps += 1;
         let pos = robot.position;
         visited.insert(pos);
+        #[cfg(debug_assertions)]
         eprintln!("{steps}: {pos:?}");
     }
 
+    display(&visited, &robot.white_panels);
+
     let panels_painted = visited.len();
-    println!("Panels painted at least once: {panels_painted}");
+    println!("\nPanels painted at least once: {panels_painted}");
 
     Ok(())
+}
+
+fn part2(prog: Program) -> Result<()> {
+    let mut robot = PaintingRobot::new(prog, HashSet::from([Vec2D::default()]));
+    let mut visited: HashSet<Vec2D> = HashSet::new();
+    visited.insert(robot.position);
+
+    let mut steps = 0;
+    while robot.step().expect("No Errors stepping through") {
+        steps += 1;
+        let pos = robot.position;
+        visited.insert(pos);
+        #[cfg(debug_assertions)]
+        eprintln!("{steps}: {pos:?}");
+    }
+
+    display(&visited, &robot.white_panels);
+
+    let panels_painted = visited.len();
+    println!("\nPanels painted at least once: {panels_painted}");
+
+    Ok(())
+}
+
+fn display(visited: &HashSet<Vec2D>, white_panels: &HashSet<Vec2D>) {
+    let mut min_x = i64::MAX;
+    let mut max_x = i64::MIN;
+    let mut min_y = i64::MAX;
+    let mut max_y = i64::MIN;
+
+    for sqare in visited {
+        min_x = min_x.min(sqare.x());
+        max_x = max_x.max(sqare.x());
+
+        min_y = min_y.min(sqare.y());
+        max_y = max_y.max(sqare.y());
+    }
+
+    println!("----------------------------");
+    for y in (min_y..=max_y).rev() {
+        let mut line = String::new();
+        for x in (min_x..=max_x) {
+            let pos = Vec2D::new(x, y);
+            let char = if white_panels.contains(&pos) {
+                '#'
+            } else {
+                ' '
+            };
+            line.push(char);
+        }
+        println!("{line}");
+    }
+    println!("----------------------------");
 }
