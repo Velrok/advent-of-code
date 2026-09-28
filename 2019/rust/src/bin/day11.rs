@@ -3,7 +3,7 @@ use std::collections::HashSet;
 
 use aoc19::{
     intcode::{Program, Word},
-    vec2d::Vec2D,
+    vec2d::{self, Vec2D},
 };
 
 enum Colour {
@@ -185,18 +185,7 @@ fn part2(prog: Program) -> Result<()> {
 }
 
 fn display(visited: &HashSet<Vec2D>, white_panels: &HashSet<Vec2D>) {
-    let mut min_x = i64::MAX;
-    let mut max_x = i64::MIN;
-    let mut min_y = i64::MAX;
-    let mut max_y = i64::MIN;
-
-    for sqare in visited {
-        min_x = min_x.min(sqare.x());
-        max_x = max_x.max(sqare.x());
-
-        min_y = min_y.min(sqare.y());
-        max_y = max_y.max(sqare.y());
-    }
+    let (min_x, max_x, min_y, max_y) = vec2d::bounds(visited);
 
     println!("----------------------------");
     for y in (min_y..=max_y).rev() {

@@ -236,7 +236,7 @@ impl Program {
         Ok(result)
     }
 
-    fn mem_set(&mut self, addr: Address, val: Word) {
+    pub fn mem_set(&mut self, addr: Address, val: Word) {
         if addr >= self.memory.len() {
             self.memory.resize(addr + 1, 0);
         }

@@ -35,6 +35,23 @@ impl Vec2D {
     }
 }
 
+pub fn bounds<'a>(points: impl IntoIterator<Item = &'a Vec2D>) -> (Inner, Inner, Inner, Inner) {
+    let mut min_x = Inner::MAX;
+    let mut max_x = Inner::MIN;
+    let mut min_y = Inner::MAX;
+    let mut max_y = Inner::MIN;
+
+    for point in points {
+        min_x = min_x.min(point.x());
+        max_x = max_x.max(point.x());
+
+        min_y = min_y.min(point.y());
+        max_y = max_y.max(point.y());
+    }
+
+    (min_x, max_x, min_y, max_y)
+}
+
 impl Add for Vec2D {
     type Output = Self;
 
