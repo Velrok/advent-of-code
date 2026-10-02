@@ -87,3 +87,54 @@ Running reference – entries are added when I ask for syntax help.
   ```
 - Other types work the same way: `int64 "42"`, `float "1.5"`, `Int64.TryParse`
 - Rust: `"42".parse::<i32>()` → `Result`
+
+## Operators as functions
+
+- Wrap an operator in parentheses to use it as a function: `(+)` is `fun a b -> a + b`
+  ```fsharp
+  [1; 2; 3] |> List.reduce (+)     // 6
+  [1; 2; 3] |> List.fold (+) 0     // 6; safe on empty lists
+  [1; 2; 3] |> List.sum            // 6; shortcut for the above
+  ```
+- `reduce` throws on an empty collection; `fold` takes a start value
+- Beware `(*)`: write `( * )` with spaces, otherwise `(*` starts a comment
+- Rust: `.iter().fold(0, |a, b| a + b)` / `.sum()`
+
+## Printing
+
+- `printfn` = `println!`, type-checked format string; `printf` = no newline
+  ```fsharp
+  printfn "x = %d, name = %s" 42 "bob"   // %d int, %s string, %f float, %b bool
+  printfn "%A" [1; 2; 3]                  // %A = any value, pretty-printed (like {:?})
+  let s = $"x = {42}"                     // string interpolation
+  printfn $"x = {42}"                     // interpolation works with printfn too
+  ```
+- Args are space-separated, not comma-separated; wrap expressions in parentheses: `printfn "%d" (f 1)`
+- Rust: `println!("{}", x)` / `{:?}`
+
+## Methods vs module functions
+
+- **.NET types** (`string`, `DateTime`, ...) have instance methods: `s.Trim()`, `s.Split(",")`
+- **F# collections** use module functions: `Array.map`, `List.filter`, `Seq.sum`
+- Method calls chain with `.`, module functions chain with `|>`; mixing is normal
+  ```fsharp
+  "a,b ".Trim().Split(",") |> Array.map (fun s -> s.ToUpper())
+  ```
+- Method args are tupled `s.Split(",", 2)`; function args are curried `Array.map f xs`
+- Lambda param types may need annotating for `.` access: `fun (s: string) -> s.Length`
+- Rust: methods on a type vs `iter().map()` adapters; F# just uses modules instead
+
+## Naming conventions
+
+| Thing                         | Style        | Example               |
+| ----------------------------- | ------------ | --------------------- |
+| values, functions, parameters | `camelCase`  | `massToFuel`, `input` |
+| types, records, unions, cases | `PascalCase` | `Point`, `Some`       |
+| modules, namespaces           | `PascalCase` | `Day01`               |
+| .NET-style members/properties | `PascalCase` | `member this.Name`    |
+| type parameters               | `'a`, `'T`   | `List<'T>`            |
+
+- Union cases and active patterns must start uppercase (else pattern matching treats them as bindings)
+- `snake_case` compiles but is non-idiomatic (Fantomas won't change it)
+- Unused binding: `_` or `_name`; trailing `'` is allowed: `x'`
+- Rust: `snake_case` fns/vars, `PascalCase` types
