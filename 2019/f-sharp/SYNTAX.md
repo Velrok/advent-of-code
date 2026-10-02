@@ -138,3 +138,30 @@ Running reference – entries are added when I ask for syntax help.
 - `snake_case` compiles but is non-idiomatic (Fantomas won't change it)
 - Unused binding: `_` or `_name`; trailing `'` is allowed: `x'`
 - Rust: `snake_case` fns/vars, `PascalCase` types
+
+## if vs match
+
+- `if` is an expression (returns a value); both branches must have the same type
+  ```fsharp
+  let sign x = if x < 0 then -1 else 1
+  ```
+- Use `if` for a simple boolean test; `match` for shapes/cases (unions, options, lists, tuples)
+- `match` with a guard handles ranges/conditions: `| n when n <= 0 -> ...`
+  ```fsharp
+  match n with
+  | 0 -> "zero"
+  | n when n < 0 -> "neg"
+  | _ -> "pos"
+  ```
+- Rust: `if` is also an expression; `match` guards are `n if n < 0`
+
+## Tail recursion
+
+- Recursive functions need `let rec`
+- Tail call = recursive call is the **last** thing done (nothing happens with its result)
+  ```fsharp
+  let rec count acc n = if n = 0 then acc else count (acc + 1) (n - 1)   // tail call: loops
+  let rec bad n = if n = 0 then 0 else 1 + bad (n - 1)                   // not tail: grows stack
+  ```
+- The compiler turns self tail calls into a loop in Release; use an accumulator argument
+- Rust: no guaranteed TCO, so usually a loop
