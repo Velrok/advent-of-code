@@ -33,3 +33,5 @@ python/day01/lib/python3.9
 2020/rust/nvim-mcp.log
 .clj-kondo/.cache/v1
 .lsp/.cache
+/2017/zig/.zig-cache
+/2017/zig/inputs
