@@ -35,3 +35,4 @@ python/day01/lib/python3.9
 .lsp/.cache
 /2017/zig/.zig-cache
 /2017/zig/inputs
+/2017/rust-aoc/inputs
